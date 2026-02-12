@@ -7,8 +7,8 @@ const execAsync = promisify(exec);
 // Helper function to speak text (blocking - waits for speech to complete)
 async function speak(text: string) {
   try {
-    // Use PowerShell's speech synthesis on Windows with maximum volume
-    await execAsync(`powershell -Command "Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Volume = 100; $synth.Speak('${text}')"`);
+    // Use PowerShell's speech synthesis on Windows with female voice (Microsoft Zira)
+    await execAsync(`powershell -Command "Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.SelectVoice('Microsoft Zira Desktop'); $synth.Volume = 100; $synth.Speak('${text}')"`);
   } catch (error) {
     console.log(`Voice: ${text}`); // Fallback to console if speech fails
   }
