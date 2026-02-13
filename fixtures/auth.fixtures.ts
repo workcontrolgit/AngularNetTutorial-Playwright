@@ -1,0 +1,265 @@
+import { Page, APIRequestContext } from '@playwright/test';
+import testUsers from '../config/test-users.json';
+
+/**
+ * Authentication Fixtures
+ *
+ * Provides reusable authentication helpers for Playwright tests:
+ * - Browser-based OIDC login flow
+ * - API token acquisition
+ * - Logout functionality
+ * - Authentication state verification
+ */
+
+/**
+ * Performs browser-based OIDC login through IdentityServer
+ *
+ * @param page - Playwright Page object
+ * @param username - Username for login
+ * @param password - Password for login
+ * @returns Promise that resolves when login is complete
+ *
+ * @example
+ * await loginAs(page, 'ashtyn1', 'Pa$$word123');
+ */
+export async function loginAs(
+  page: Page,
+  username: string,
+  password: string
+): Promise<void> {
+  // Navigate to Angular app (will redirect to IdentityServer)
+  await page.goto('/');
+
+  // Wait for redirect to IdentityServer login page
+  await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
+
+  // Fill in login credentials
+  await page.fill('input[name="Username"]', username);
+  await page.fill('input[name="Password"]', password);
+
+  // Submit login form
+  await page.click('button[type="submit"]:has-text("Login")');
+
+  // Wait for OAuth callback redirect back to Angular app
+  await page.waitForURL(/localhost:4200.*/, { timeout: 10000 });
+
+  // Wait for dashboard to load (indicating successful authentication)
+  await page.waitForSelector('text=Dashboard', { timeout: 10000 });
+}
+
+/**
+ * Performs login using a predefined test user role
+ *
+ * @param page - Playwright Page object
+ * @param role - User role: 'employee' | 'manager' | 'hradmin'
+ * @returns Promise that resolves when login is complete
+ *
+ * @example
+ * await loginAsRole(page, 'manager');
+ */
+export async function loginAsRole(
+  page: Page,
+  role: 'employee' | 'manager' | 'hradmin'
+): Promise<void> {
+  const user = testUsers[role];
+  if (!user) {
+    throw new Error(`Unknown role: ${role}`);
+  }
+  await loginAs(page, user.username, user.password);
+}
+
+/**
+ * Acquires an API access token from IdentityServer
+ *
+ * @param request - Playwright APIRequestContext
+ * @param username - Username for token request
+ * @param password - Password for token request
+ * @returns Promise resolving to access token string
+ *
+ * @example
+ * const token = await getApiToken(request, 'ashtyn1', 'Pa$$word123');
+ * const response = await request.get('/api/v1/employees', {
+ *   headers: { Authorization: `Bearer ${token}` }
+ * });
+ */
+export async function getApiToken(
+  request: APIRequestContext,
+  username: string,
+  password: string
+): Promise<string> {
+  const tokenEndpoint = 'https://sts.skoruba.local/connect/token';
+
+  const response = await request.post(tokenEndpoint, {
+    form: {
+      grant_type: 'password',
+      client_id: 'TalentManagement',
+      client_secret: 'secret', // Note: Update with actual client secret
+      scope: 'openid profile email roles app.api.talentmanagement.read app.api.talentmanagement.write',
+      username: username,
+      password: password,
+    },
+    ignoreHTTPSErrors: true,
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Failed to get token: ${response.status()} ${response.statusText()}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+/**
+ * Acquires an API token using a predefined test user role
+ *
+ * @param request - Playwright APIRequestContext
+ * @param role - User role: 'employee' | 'manager' | 'hradmin'
+ * @returns Promise resolving to access token string
+ *
+ * @example
+ * const token = await getTokenForRole(request, 'manager');
+ */
+export async function getTokenForRole(
+  request: APIRequestContext,
+  role: 'employee' | 'manager' | 'hradmin'
+): Promise<string> {
+  const user = testUsers[role];
+  if (!user) {
+    throw new Error(`Unknown role: ${role}`);
+  }
+  return await getApiToken(request, user.username, user.password);
+}
+
+/**
+ * Performs logout from the application
+ *
+ * @param page - Playwright Page object
+ * @returns Promise that resolves when logout is complete
+ *
+ * @example
+ * await logout(page);
+ */
+export async function logout(page: Page): Promise<void> {
+  // Click user menu
+  await page.click('button[aria-label="User menu"], button:has-text("User")');
+
+  // Click logout option
+  await page.click('button:has-text("Logout"), a:has-text("Logout")');
+
+  // Wait for redirect to IdentityServer logout
+  await page.waitForURL(/sts\.skoruba\.local.*endsession/, { timeout: 5000 }).catch(() => {
+    // If no redirect, might be already logged out
+  });
+
+  // Wait for final redirect back to login page
+  await page.waitForURL(/localhost:4200/, { timeout: 5000 });
+}
+
+/**
+ * Checks if user is currently authenticated
+ *
+ * @param page - Playwright Page object
+ * @returns Promise resolving to true if authenticated, false otherwise
+ *
+ * @example
+ * const authenticated = await isAuthenticated(page);
+ * if (!authenticated) {
+ *   await loginAsRole(page, 'manager');
+ * }
+ */
+export async function isAuthenticated(page: Page): Promise<boolean> {
+  try {
+    // Check for authenticated state indicators
+    const hasUserMenu = await page.locator('button[aria-label="User menu"]').isVisible({ timeout: 2000 });
+    const hasDashboard = await page.locator('text=Dashboard').isVisible({ timeout: 2000 });
+
+    return hasUserMenu || hasDashboard;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gets the current user's access token from browser storage
+ *
+ * @param page - Playwright Page object
+ * @returns Promise resolving to access token string or null
+ *
+ * @example
+ * const token = await getStoredToken(page);
+ * console.log('Current token:', token);
+ */
+export async function getStoredToken(page: Page): Promise<string | null> {
+  // Try localStorage
+  const localStorageToken = await page.evaluate(() => {
+    const keys = Object.keys(localStorage);
+    for (const key of keys) {
+      if (key.includes('access_token') || key.includes('oidc')) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            return parsed.access_token || parsed.accessToken;
+          } catch {
+            return value;
+          }
+        }
+      }
+    }
+    return null;
+  });
+
+  if (localStorageToken) {
+    return localStorageToken;
+  }
+
+  // Try sessionStorage
+  const sessionStorageToken = await page.evaluate(() => {
+    const keys = Object.keys(sessionStorage);
+    for (const key of keys) {
+      if (key.includes('access_token') || key.includes('oidc')) {
+        const value = sessionStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            return parsed.access_token || parsed.accessToken;
+          } catch {
+            return value;
+          }
+        }
+      }
+    }
+    return null;
+  });
+
+  return sessionStorageToken;
+}
+
+/**
+ * Clears all authentication tokens from browser storage
+ *
+ * @param page - Playwright Page object
+ * @returns Promise that resolves when tokens are cleared
+ *
+ * @example
+ * await clearAuthTokens(page);
+ */
+export async function clearAuthTokens(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    // Clear localStorage
+    const localKeys = Object.keys(localStorage);
+    for (const key of localKeys) {
+      if (key.includes('oidc') || key.includes('token') || key.includes('auth')) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // Clear sessionStorage
+    const sessionKeys = Object.keys(sessionStorage);
+    for (const key of sessionKeys) {
+      if (key.includes('oidc') || key.includes('token') || key.includes('auth')) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  });
+}

@@ -1,0 +1,48 @@
+{
+  "employees": {
+    "list": "/employees",
+    "detail": "/employees/{id}",
+    "create": "/employees",
+    "update": "/employees/{id}",
+    "delete": "/employees/{id}",
+    "search": "/employees/search"
+  },
+  "departments": {
+    "list": "/departments",
+    "detail": "/departments/{id}",
+    "create": "/departments",
+    "update": "/departments/{id}",
+    "delete": "/departments/{id}",
+    "search": "/departments/search"
+  },
+  "positions": {
+    "list": "/positions",
+    "detail": "/positions/{id}",
+    "create": "/positions",
+    "update": "/positions/{id}",
+    "delete": "/positions/{id}"
+  },
+  "salaryRanges": {
+    "list": "/salary-ranges",
+    "detail": "/salary-ranges/{id}",
+    "create": "/salary-ranges",
+    "update": "/salary-ranges/{id}",
+    "delete": "/salary-ranges/{id}"
+  },
+  "dashboard": {
+    "metrics": "/dashboard/metrics",
+    "employeeCount": "/dashboard/employee-count",
+    "departmentCount": "/dashboard/department-count",
+    "positionCount": "/dashboard/position-count"
+  },
+  "auth": {
+    "token": "/connect/token",
+    "userInfo": "/connect/userinfo",
+    "authorize": "/connect/authorize",
+    "logout": "/connect/endsession"
+  },
+  "cache": {
+    "invalidate": "/cache/invalidate",
+    "statistics": "/cache/statistics"
+  }
+}

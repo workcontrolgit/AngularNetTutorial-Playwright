@@ -1,0 +1,34 @@
+{
+  "employee": {
+    "username": "employee1",
+    "password": "Pa$$word123",
+    "role": "Employee",
+    "permissions": ["read"],
+    "description": "Read-only access to all modules",
+    "canCreate": false,
+    "canEdit": false,
+    "canDelete": false
+  },
+  "manager": {
+    "username": "ashtyn1",
+    "password": "Pa$$word123",
+    "role": "Manager",
+    "permissions": ["read", "write"],
+    "description": "Can create and edit employees and departments",
+    "canCreate": true,
+    "canEdit": true,
+    "canDelete": false,
+    "restrictedModules": ["positions", "salaryRanges"]
+  },
+  "hradmin": {
+    "username": "admin1",
+    "password": "Pa$$word123",
+    "role": "HRAdmin",
+    "permissions": ["read", "write", "delete", "admin"],
+    "description": "Full administrative access to all modules",
+    "canCreate": true,
+    "canEdit": true,
+    "canDelete": true,
+    "restrictedModules": []
+  }
+}
