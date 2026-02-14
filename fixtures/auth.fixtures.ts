@@ -290,41 +290,31 @@ export async function getTokenFromProfile(page: Page): Promise<string | null> {
  * console.log('Current token:', token);
  */
 export async function getStoredToken(page: Page): Promise<string | null> {
-  // Try localStorage
-  const localStorageToken = await page.evaluate(() => {
-    const keys = Object.keys(localStorage);
-    for (const key of keys) {
-      if (key.includes('access_token') || key.includes('oidc')) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          try {
-            const parsed = JSON.parse(value);
-            return parsed.access_token || parsed.accessToken;
-          } catch {
-            return value;
-          }
-        }
-      }
-    }
-    return null;
-  });
-
-  if (localStorageToken) {
-    return localStorageToken;
-  }
-
-  // Try sessionStorage
+  // Try sessionStorage first (OIDC library stores tokens here by default)
   const sessionStorageToken = await page.evaluate(() => {
+    // Direct key lookup (fastest) - angular-oauth2-oidc stores token with exact key
+    let token = sessionStorage.getItem('access_token');
+    if (token && token.startsWith('eyJ')) {
+      return token;
+    }
+
+    // Fallback: search for keys containing 'access_token' or 'oidc'
     const keys = Object.keys(sessionStorage);
     for (const key of keys) {
       if (key.includes('access_token') || key.includes('oidc')) {
         const value = sessionStorage.getItem(key);
         if (value) {
+          // Try as JWT directly (most common case)
+          if (value.startsWith('eyJ')) {
+            return value;
+          }
+          // Try as JSON object (some OIDC libraries wrap tokens)
           try {
             const parsed = JSON.parse(value);
-            return parsed.access_token || parsed.accessToken;
+            if (parsed.access_token) return parsed.access_token;
+            if (parsed.accessToken) return parsed.accessToken;
           } catch {
-            return value;
+            // Not JSON, continue searching
           }
         }
       }
@@ -332,7 +322,43 @@ export async function getStoredToken(page: Page): Promise<string | null> {
     return null;
   });
 
-  return sessionStorageToken;
+  if (sessionStorageToken) {
+    return sessionStorageToken;
+  }
+
+  // Try localStorage as fallback (less common but some apps use it)
+  const localStorageToken = await page.evaluate(() => {
+    // Direct key lookup
+    let token = localStorage.getItem('access_token');
+    if (token && token.startsWith('eyJ')) {
+      return token;
+    }
+
+    // Fallback: search for keys
+    const keys = Object.keys(localStorage);
+    for (const key of keys) {
+      if (key.includes('access_token') || key.includes('oidc')) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          // Try as JWT directly
+          if (value.startsWith('eyJ')) {
+            return value;
+          }
+          // Try as JSON object
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed.access_token) return parsed.access_token;
+            if (parsed.accessToken) return parsed.accessToken;
+          } catch {
+            // Not JSON, continue searching
+          }
+        }
+      }
+    }
+    return null;
+  });
+
+  return localStorageToken;
 }
 
 /**
