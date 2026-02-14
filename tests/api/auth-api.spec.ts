@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { getApiToken, getTokenForRole } from '../../fixtures/auth.fixtures';
+import { getApiToken, getTokenForRole, loginAsRole, getTokenFromProfile, logout } from '../../fixtures/auth.fixtures';
 
 /**
  * Authentication API Tests
@@ -240,5 +240,131 @@ test.describe('Authentication API', () => {
     // Check for issuer claim (should be IdentityServer URL)
     expect(payload.iss).toBeDefined();
     expect(payload.iss).toContain('sts.skoruba.local');
+  });
+});
+
+/**
+ * API Authentication via Profile Page
+ *
+ * Alternative approach: Extract access token from Profile page after browser login
+ * This works when IdentityServer password grant is not configured for programmatic access
+ */
+test.describe('API Authentication via Profile Page', () => {
+  const baseURL = 'https://localhost:44378/api/v1';
+
+  test('should extract token from Profile page and call API', async ({ page, request }) => {
+    // Step 1: Login via browser (OIDC flow)
+    await loginAsRole(page, 'manager');
+
+    // Step 2: Extract access token from Profile page
+    const token = await getTokenFromProfile(page);
+
+    // Verify token was extracted
+    expect(token).toBeTruthy();
+    expect(token).toMatch(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/); // JWT format
+
+    // Step 3: Use token for API request
+    const response = await request.get(`${baseURL}/employees`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+      ignoreHTTPSErrors: true,
+    });
+
+    // Verify API accepts the token
+    // Note: API currently allows anonymous access (returns 200 regardless)
+    // When API auth is enabled, this should be 200 with valid token, 401 without
+    expect(response.status()).toBe(200);
+
+    const data = await response.json();
+    expect(data).toBeDefined();
+  });
+
+  test('should verify token has correct scopes for API access', async ({ page }) => {
+    // Login and get token
+    await loginAsRole(page, 'hradmin');
+    const token = await getTokenFromProfile(page);
+
+    expect(token).toBeTruthy();
+
+    // Decode token to verify scopes
+    const parts = token!.split('.');
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+
+    // Verify token has API scopes
+    expect(payload.scope).toBeDefined();
+
+    // Token should have read/write scopes for the API
+    const scopes = typeof payload.scope === 'string'
+      ? payload.scope.split(' ')
+      : payload.scope;
+
+    // Check for TalentManagement API scopes
+    const hasApiScope = scopes.some((scope: string) =>
+      scope.includes('app.api.talentmanagement') ||
+      scope.includes('talentmanagement')
+    );
+
+    expect(hasApiScope).toBe(true);
+  });
+
+  test('should use different tokens for different roles', async ({ page }) => {
+    // Get token for Manager role
+    await loginAsRole(page, 'manager');
+    const managerToken = await getTokenFromProfile(page);
+
+    // Logout first before logging in as different role
+    await logout(page);
+
+    // Get token for Employee role
+    await loginAsRole(page, 'employee');
+    const employeeToken = await getTokenFromProfile(page);
+
+    // Tokens should be different
+    expect(managerToken).toBeTruthy();
+    expect(employeeToken).toBeTruthy();
+    expect(managerToken).not.toBe(employeeToken);
+
+    // Decode both tokens
+    const managerPayload = JSON.parse(
+      Buffer.from(managerToken!.split('.')[1], 'base64').toString()
+    );
+    const employeePayload = JSON.parse(
+      Buffer.from(employeeToken!.split('.')[1], 'base64').toString()
+    );
+
+    // Verify different roles in tokens
+    expect(managerPayload.role).toContain('Manager');
+    expect(employeePayload.role).toContain('Employee');
+  });
+
+  test('should call API with HRAdmin token for full access', async ({ page, request }) => {
+    // Login as HRAdmin (full access)
+    await loginAsRole(page, 'hradmin');
+    const token = await getTokenFromProfile(page);
+
+    expect(token).toBeTruthy();
+
+    // HRAdmin should have access to all endpoints
+    const endpoints = [
+      '/employees',
+      '/departments',
+      '/positions',      // HRAdmin only
+      '/salaryranges',   // HRAdmin only
+    ];
+
+    for (const endpoint of endpoints) {
+      const response = await request.get(`${baseURL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        ignoreHTTPSErrors: true,
+      });
+
+      // All endpoints should return 200 for HRAdmin
+      expect(response.status()).toBe(200);
+    }
   });
 });

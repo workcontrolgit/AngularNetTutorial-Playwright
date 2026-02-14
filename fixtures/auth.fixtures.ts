@@ -249,15 +249,27 @@ export async function getTokenFromProfile(page: Page): Promise<string | null> {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    // Extract access token from the page
-    // The token is displayed on the profile page as text
+    // Click on "Access Token" tab (ID Token tab is selected by default)
+    const accessTokenTab = page.locator('tab:has-text("Access Token"), [role="tab"]:has-text("Access Token")').first();
+    await accessTokenTab.click();
+    await page.waitForTimeout(500);
+
+    // Click "Show Raw Token" button to reveal the token
+    const showTokenButton = page.locator('button:has-text("Show Raw Token")').first();
+    await showTokenButton.click();
+    await page.waitForTimeout(1000);
+
+    // Extract the token from the page content
+    // The raw token should now be visible
     const pageContent = await page.content();
 
     // Look for JWT pattern: eyJ[base64].[base64].[base64]
-    const tokenMatch = pageContent.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/);
+    // Use global flag to find all matches
+    const tokenMatches = pageContent.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g);
 
-    if (tokenMatch) {
-      return tokenMatch[0];
+    if (tokenMatches && tokenMatches.length > 0) {
+      // Return the longest token (access tokens are typically longer than ID tokens)
+      return tokenMatches.sort((a, b) => b.length - a.length)[0];
     }
 
     return null;
