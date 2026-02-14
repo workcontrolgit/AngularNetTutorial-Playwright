@@ -217,6 +217,57 @@ export async function isAuthenticated(page: Page): Promise<boolean> {
 }
 
 /**
+ * Gets the access token from the user profile page
+ *
+ * After login, the user menu has a "Profile" submenu option that displays
+ * the ID Token and Access Token. This function extracts the access token
+ * from that page.
+ *
+ * @param page - Playwright Page object
+ * @returns Promise resolving to access token string or null
+ *
+ * @example
+ * await loginAsRole(page, 'manager');
+ * const token = await getTokenFromProfile(page);
+ * // Use token for API calls
+ * const response = await request.get('/api/v1/employees', {
+ *   headers: { Authorization: `Bearer ${token}` }
+ * });
+ */
+export async function getTokenFromProfile(page: Page): Promise<string | null> {
+  try {
+    // Click user icon in upper right corner
+    const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
+    await userIcon.click();
+    await page.waitForTimeout(500);
+
+    // Click "Profile" option from dropdown menu
+    const profileOption = page.locator('button:has-text("Profile"), a:has-text("Profile"), [role="menuitem"]:has-text("Profile")').first();
+    await profileOption.click();
+
+    // Wait for profile page to load
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Extract access token from the page
+    // The token is displayed on the profile page as text
+    const pageContent = await page.content();
+
+    // Look for JWT pattern: eyJ[base64].[base64].[base64]
+    const tokenMatch = pageContent.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/);
+
+    if (tokenMatch) {
+      return tokenMatch[0];
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Failed to extract token from profile page:', error);
+    return null;
+  }
+}
+
+/**
  * Gets the current user's access token from browser storage
  *
  * @param page - Playwright Page object

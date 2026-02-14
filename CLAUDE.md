@@ -96,8 +96,9 @@ tests/
 - `loginAsRole(page, role)` - Login using predefined test user
 - `logout(page)` - Logout and return to Guest mode
 - `isAuthenticated(page)` - Check authentication state
-- `getApiToken(request, username, password)` - Acquire API token from IdentityServer
-- `getTokenForRole(request, role)` - Get API token for test user role
+- `getApiToken(request, username, password)` - Acquire API token from IdentityServer (currently broken)
+- `getTokenForRole(request, role)` - Get API token for test user role (currently broken)
+- `getTokenFromProfile(page)` - Extract access token from Profile page (✅ RECOMMENDED)
 - `getStoredToken(page)` - Extract token from browser storage
 - `clearAuthTokens(page)` - Clear all auth tokens from storage
 
@@ -170,6 +171,45 @@ Logout is handled by **IdentityServer**, not Angular:
 4. Click link → returns to Angular as Guest/Anonymous
 
 **The `logout()` function automatically handles clicking the return link.**
+
+### Profile Page - Accessing Tokens
+
+After login, the user menu contains a **"Profile"** submenu option that displays:
+- **ID Token** - User identity information
+- **Access Token** - Token for API authorization
+
+**Navigation:** User icon (upper right) → "Profile"
+
+**Extracting Access Token:**
+```typescript
+import { getTokenFromProfile } from '../fixtures/auth.fixtures';
+
+test('Call API with access token from profile', async ({ page, request }) => {
+  // Login first
+  await loginAsRole(page, 'manager');
+
+  // Extract token from profile page
+  const token = await getTokenFromProfile(page);
+
+  // Use token for API calls
+  const response = await request.get('https://localhost:44378/api/v1/employees', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json'
+    },
+    ignoreHTTPSErrors: true
+  });
+
+  expect(response.ok()).toBe(true);
+});
+```
+
+**Why use Profile page for tokens:**
+- ✅ More reliable than parsing browser storage
+- ✅ Tokens are displayed in readable format
+- ✅ Can verify both ID token and access token
+- ✅ Good for debugging authentication issues
+- ✅ Alternative when IdentityServer password grant is unavailable
 
 ### Test Users (config/test-users.json)
 
