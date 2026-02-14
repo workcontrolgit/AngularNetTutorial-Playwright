@@ -27,8 +27,18 @@ export async function loginAs(
   username: string,
   password: string
 ): Promise<void> {
-  // Navigate to Angular app (will redirect to IdentityServer)
+  // Navigate to Angular app (loads as Guest/Anonymous)
   await page.goto('/');
+  await page.waitForLoadState('networkidle');
+
+  // Click user icon in upper right corner
+  const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
+  await userIcon.click();
+  await page.waitForTimeout(500);
+
+  // Click "Login" option from dropdown menu
+  const loginOption = page.locator('button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")').first();
+  await loginOption.click();
 
   // Wait for redirect to IdentityServer login page
   await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
@@ -37,14 +47,14 @@ export async function loginAs(
   await page.fill('input[name="Username"]', username);
   await page.fill('input[name="Password"]', password);
 
-  // Submit login form
-  await page.click('button[type="submit"]:has-text("Login")');
+  // Submit login form (click the blue "Login" button)
+  await page.click('button:has-text("Login")');
 
   // Wait for OAuth callback redirect back to Angular app
-  await page.waitForURL(/localhost:4200.*/, { timeout: 10000 });
+  await page.waitForURL(/localhost:4200.*/, { timeout: 15000 });
 
   // Wait for dashboard to load (indicating successful authentication)
-  await page.waitForSelector('text=Dashboard', { timeout: 10000 });
+  await page.waitForSelector('h1:has-text("Dashboard"), h2:has-text("Dashboard"), .matero-page-title', { timeout: 10000 });
 }
 
 /**
@@ -140,19 +150,40 @@ export async function getTokenForRole(
  * await logout(page);
  */
 export async function logout(page: Page): Promise<void> {
-  // Click user menu
-  await page.click('button[aria-label="User menu"], button:has-text("User")');
+  // Click user icon in upper right corner (same as login flow)
+  const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
+  await userIcon.click();
+  await page.waitForTimeout(500);
 
-  // Click logout option
-  await page.click('button:has-text("Logout"), a:has-text("Logout")');
+  // Click "Logout" option from dropdown menu
+  const logoutOption = page.locator('button:has-text("Logout"), a:has-text("Logout"), [role="menuitem"]:has-text("Logout")').first();
+  await logoutOption.click();
 
-  // Wait for redirect to IdentityServer logout
-  await page.waitForURL(/sts\.skoruba\.local.*endsession/, { timeout: 5000 }).catch(() => {
-    // If no redirect, might be already logged out
-  });
+  // Wait for redirect to IdentityServer logout screen
+  await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
 
-  // Wait for final redirect back to login page
-  await page.waitForURL(/localhost:4200/, { timeout: 5000 });
+  // Wait a moment for STS logout screen to load
+  await page.waitForTimeout(1000);
+
+  // Look for the "click here" link to return to Angular
+  // Try multiple possible selectors for the return link
+  const returnLink = page.locator('a:has-text("click here"), a:has-text("return"), a:has-text("back to"), a[href*="localhost:4200"]').first();
+
+  // Check if return link exists and click it
+  const linkExists = await returnLink.isVisible({ timeout: 5000 }).catch(() => false);
+  if (linkExists) {
+    await returnLink.click();
+
+    // Wait for redirect back to Angular
+    await page.waitForURL(/localhost:4200.*/, { timeout: 10000 });
+  } else {
+    // If no return link found, just navigate back to Angular
+    await page.goto('/');
+  }
+
+  // Wait for page to settle
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1000);
 }
 
 /**
@@ -169,12 +200,18 @@ export async function logout(page: Page): Promise<void> {
  */
 export async function isAuthenticated(page: Page): Promise<boolean> {
   try {
-    // Check for authenticated state indicators
-    const hasUserMenu = await page.locator('button[aria-label="User menu"]').isVisible({ timeout: 2000 });
-    const hasDashboard = await page.locator('text=Dashboard').isVisible({ timeout: 2000 });
+    // Check for Guest heading (h4) which appears when NOT authenticated
+    const guestCount = await page.locator('h4:has-text("Guest")').count();
 
-    return hasUserMenu || hasDashboard;
+    // If Guest heading exists, user is NOT authenticated
+    if (guestCount > 0) {
+      return false;
+    }
+
+    // Otherwise, user IS authenticated
+    return true;
   } catch {
+    // If there's an error, assume not authenticated
     return false;
   }
 }

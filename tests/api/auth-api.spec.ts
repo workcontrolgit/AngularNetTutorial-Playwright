@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { getApiToken, getTokenForRole } from '../../fixtures/api.fixtures';
+import { getApiToken, getTokenForRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Authentication API Tests
