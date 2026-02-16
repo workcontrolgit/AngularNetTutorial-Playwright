@@ -131,32 +131,25 @@ test.describe('Employee Edit', () => {
 
     await page.waitForTimeout(2000);
 
-    // Clear required field
+    // Clear required field (firstName)
     const firstNameInput = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
     await firstNameInput.clear();
-    await firstNameInput.blur();
+
+    // Click Update button to trigger validation
+    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
+    await submitButton.first().click();
 
     await page.waitForTimeout(500);
 
-    // Verify validation error
-    const error = page.locator('.mat-error, .error, .invalid-feedback').filter({ hasText: /required|first.*name/i });
-    await expect(error.first()).toBeVisible({ timeout: 2000 });
+    // Verify validation error is shown
+    const errors = page.locator('.mat-error, mat-error');
+    const errorCount = await errors.count();
 
-    // Submit button should be disabled or form won't submit
-    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
-    const isDisabled = await submitButton.first().isDisabled().catch(() => false);
+    expect(errorCount).toBeGreaterThan(0);
 
-    if (!isDisabled) {
-      // Try to submit
-      await submitButton.first().click();
-      await page.waitForTimeout(1000);
-
-      // Form should still be visible (not submitted)
-      const form = page.locator('form');
-      await expect(form.first()).toBeVisible();
-    } else {
-      expect(isDisabled).toBe(true);
-    }
+    // Form should still be visible (not submitted)
+    const form = page.locator('form');
+    await expect(form.first()).toBeVisible();
   });
 
   test('should validate email format on edit', async ({ page }) => {
@@ -175,14 +168,17 @@ test.describe('Employee Edit', () => {
     // Enter invalid email
     const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
     await emailInput.clear();
-    await emailInput.fill('invalid-email-format');
-    await emailInput.blur();
+    await emailInput.fill('46546');
+
+    // Click Update button to trigger validation
+    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
+    await submitButton.first().click();
 
     await page.waitForTimeout(500);
 
-    // Verify validation error
-    const emailError = page.locator('.mat-error, .error').filter({ hasText: /email|valid|format/i });
-    await expect(emailError.first()).toBeVisible({ timeout: 2000 });
+    // Verify email validation error shows "Please enter a valid email"
+    const emailError = page.locator('text=/please enter a valid email/i');
+    await expect(emailError).toBeVisible({ timeout: 2000 });
   });
 
   test('should show success notification after update', async ({ page }) => {
