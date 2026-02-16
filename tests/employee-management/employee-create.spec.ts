@@ -109,15 +109,15 @@ test.describe('Employee Create', () => {
   });
 
   test('should show validation errors for required fields', async ({ page }) => {
-    // Try to submit empty form
+    // Try to submit empty form (don't fill any fields)
     const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
     await submitButton.first().click();
 
-    // Wait for validation
+    // Wait for validation errors to appear
     await page.waitForTimeout(1000);
 
-    // Verify validation errors are shown
-    const errors = page.locator('.error, .mat-error, .invalid-feedback, [role="alert"]');
+    // Verify validation errors are shown (mat-error elements)
+    const errors = page.locator('.mat-error, mat-error');
     const errorCount = await errors.count();
 
     expect(errorCount).toBeGreaterThan(0);
@@ -134,19 +134,23 @@ test.describe('Employee Create', () => {
 
     // Enter invalid email
     const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
-    await emailInput.fill('invalid-email');
+    await emailInput.fill('46546');
 
-    // Blur to trigger validation
-    await emailInput.blur();
+    // Click Create button to trigger validation
+    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
+    await submitButton.first().click();
     await page.waitForTimeout(500);
 
-    // Verify email validation error
-    const emailError = page.locator('.mat-error, .error').filter({ hasText: /email|valid|format/i });
-    await expect(emailError.first()).toBeVisible({ timeout: 2000 });
+    // Verify email validation error shows "Please enter a valid email"
+    const emailError = page.locator('text=/please enter a valid email/i');
+    await expect(emailError).toBeVisible({ timeout: 2000 });
 
     // Enter valid email
     await emailInput.fill('john.doe@example.com');
-    await emailInput.blur();
+    await page.waitForTimeout(300);
+
+    // Click Create again
+    await submitButton.first().click();
     await page.waitForTimeout(500);
 
     // Error should disappear
