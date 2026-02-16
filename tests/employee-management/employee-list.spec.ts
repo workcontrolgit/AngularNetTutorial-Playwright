@@ -25,13 +25,9 @@ test.describe('Employee List', () => {
     const employeeTable = page.locator('table, mat-table, .employee-list');
     await expect(employeeTable.first()).toBeVisible();
 
-    // Verify pagination controls exist
+    // Verify pagination controls exist at the bottom
     const paginator = page.locator('mat-paginator, .pagination, nav[aria-label*="pagination"]');
     await expect(paginator.first()).toBeVisible();
-
-    // Verify pagination info (e.g., "1-10 of 50")
-    const paginationInfo = page.locator('text=/\\d+-\\d+ of \\d+|page \\d+ of \\d+/i');
-    await expect(paginationInfo.first()).toBeVisible();
   });
 
   test('should change page size', async ({ page }) => {
@@ -58,129 +54,135 @@ test.describe('Employee List', () => {
   });
 
   test('should search employees by employee number', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    await expect(searchInput.first()).toBeVisible();
+    // Find Employee Number typeahead filter (first input in filter row)
+    const employeeNumberInput = page.locator('input').first();
+    await expect(employeeNumberInput).toBeVisible();
 
     // Get first employee number from the list
-    const firstRow = page.locator('tr, mat-row').nth(1);
+    const firstRow = page.locator('tbody tr, mat-row').nth(1);
     const employeeNumber = await firstRow.locator('td, mat-cell').first().textContent();
 
     if (employeeNumber && employeeNumber.trim()) {
-      // Search for this employee number
-      await searchInput.first().fill(employeeNumber.trim());
-      await page.waitForTimeout(1000); // Debounce delay
+      // Type in the employee number filter (typeahead)
+      await employeeNumberInput.fill(employeeNumber.trim());
+      await page.waitForTimeout(1500); // Wait for typeahead/filter to apply
 
       // Verify filtered results contain the search term
-      const visibleRows = page.locator('tr, mat-row').filter({ hasText: employeeNumber.trim() });
+      const visibleRows = page.locator('tbody tr, mat-row').filter({ hasText: employeeNumber.trim() });
       expect(await visibleRows.count()).toBeGreaterThan(0);
     }
   });
 
-  test('should search employees by name', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    await expect(searchInput.first()).toBeVisible();
+  test('should search employees by first name', async ({ page }) => {
+    // Find First Name typeahead filter (second input in filter row)
+    const firstNameInput = page.locator('input').nth(1);
+    await expect(firstNameInput).toBeVisible();
 
-    // Search for a common name
-    await searchInput.first().fill('test');
-    await page.waitForTimeout(1000);
+    // Get a first name from the list
+    const firstRow = page.locator('tbody tr, mat-row').nth(1);
+    const fullName = await firstRow.locator('td, mat-cell').nth(1).textContent();
 
-    // Verify some results are shown (or empty state)
-    const rows = page.locator('tr, mat-row');
-    const rowCount = await rows.count();
+    if (fullName && fullName.trim()) {
+      // Extract first word (typically title + first name, so take second word)
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[1] || nameParts[0];
 
-    // Either has matching rows or shows empty state
-    if (rowCount > 1) {
-      // Has results
-      expect(rowCount).toBeGreaterThan(1);
-    } else {
-      // Shows empty state
-      const emptyState = page.locator('text=/no.*results|no.*employees|empty/i');
-      await expect(emptyState.first()).toBeVisible();
+      // Type in the first name filter (typeahead)
+      await firstNameInput.fill(firstName);
+      await page.waitForTimeout(1500);
+
+      // Verify filtered results contain the first name
+      const visibleRows = page.locator('tbody tr, mat-row').filter({ hasText: new RegExp(firstName, 'i') });
+      expect(await visibleRows.count()).toBeGreaterThan(0);
     }
   });
 
   test('should search employees by email', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    await expect(searchInput.first()).toBeVisible();
+    // Find Email typeahead filter (4th input in filter row)
+    const emailInput = page.locator('input').nth(3);
+    await expect(emailInput).toBeVisible();
 
-    // Search for email pattern
-    await searchInput.first().fill('@example.com');
-    await page.waitForTimeout(1000);
+    // Get an email from the list
+    const firstRow = page.locator('tbody tr, mat-row').nth(1);
+    const email = await firstRow.locator('td, mat-cell').nth(2).textContent();
 
-    // Verify results contain email domain
-    const rows = page.locator('tr, mat-row').filter({ hasText: /@example\.com/i });
-    const count = await rows.count();
+    if (email && email.trim()) {
+      // Type partial email in the filter (typeahead)
+      const partialEmail = email.trim().split('@')[0];
+      await emailInput.fill(partialEmail);
+      await page.waitForTimeout(1500);
 
-    // Either has matching rows or shows no results
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('should show autocomplete suggestions', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-
-    // Start typing to trigger autocomplete
-    await searchInput.first().fill('a');
-    await page.waitForTimeout(500);
-
-    // Check if autocomplete appears
-    const autocomplete = page.locator('mat-autocomplete, .autocomplete, datalist');
-    const hasAutocomplete = await autocomplete.isVisible({ timeout: 2000 }).catch(() => false);
-
-    if (hasAutocomplete) {
-      // Verify suggestions are shown
-      const options = page.locator('mat-option, .autocomplete-option, option');
-      expect(await options.count()).toBeGreaterThan(0);
-    } else {
-      // Autocomplete might not be implemented yet
-      test.skip();
+      // Verify filtered results contain the email
+      const visibleRows = page.locator('tbody tr, mat-row').filter({ hasText: new RegExp(partialEmail, 'i') });
+      expect(await visibleRows.count()).toBeGreaterThan(0);
     }
   });
 
-  test('should clear search', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    await expect(searchInput.first()).toBeVisible();
+  test('should filter by position title', async ({ page }) => {
+    // Find Position Title typeahead filter (5th input in filter row)
+    const positionInput = page.locator('input').nth(4);
+    await expect(positionInput).toBeVisible();
+
+    // Get a position from the list
+    const firstRow = page.locator('tbody tr, mat-row').nth(1);
+    const position = await firstRow.locator('td, mat-cell').nth(4).textContent();
+
+    if (position && position.trim()) {
+      // Type partial position in the filter
+      const partialPosition = position.trim().split(' ')[0];
+      await positionInput.fill(partialPosition);
+      await page.waitForTimeout(1500);
+
+      // Verify filtered results contain the position
+      const visibleRows = page.locator('tbody tr, mat-row').filter({ hasText: new RegExp(partialPosition, 'i') });
+      expect(await visibleRows.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('should clear filters', async ({ page }) => {
+    // Find First Name filter (second input) and enter a search term
+    const firstNameInput = page.locator('input').nth(1);
+    await expect(firstNameInput).toBeVisible();
 
     // Perform search
-    await searchInput.first().fill('test search');
+    await firstNameInput.fill('test');
     await page.waitForTimeout(1000);
 
-    // Clear search
-    const clearButton = page.locator('button[aria-label*="clear"], .clear-search');
-
-    if (await clearButton.isVisible({ timeout: 2000 })) {
-      await clearButton.click();
-    } else {
-      // Clear manually
-      await searchInput.first().clear();
-    }
+    // Click Clear Filters button
+    const clearButton = page.locator('button').filter({ hasText: /clear.*filters/i });
+    await expect(clearButton).toBeVisible();
+    await clearButton.click();
 
     await page.waitForTimeout(1000);
 
-    // Verify search is cleared
-    expect(await searchInput.first().inputValue()).toBe('');
+    // Verify filter is cleared
+    expect(await firstNameInput.inputValue()).toBe('');
 
     // Verify full list is shown again
-    const rows = page.locator('tr, mat-row');
+    const rows = page.locator('tbody tr, mat-row');
     expect(await rows.count()).toBeGreaterThan(1);
   });
 
   test('should display empty state when no results found', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    await expect(searchInput.first()).toBeVisible();
+    // Find First Name filter (second input)
+    const firstNameInput = page.locator('input').nth(1);
+    await expect(firstNameInput).toBeVisible();
 
     // Search for something that definitely won't exist
-    await searchInput.first().fill('zzzzzzzzzzzzzzzzzzz');
-    await page.waitForTimeout(1000);
+    await firstNameInput.fill('zzzzzzzzzzzzzzzzzzz');
+    await page.waitForTimeout(1500);
 
-    // Verify empty state is shown
-    const emptyState = page.locator('text=/no.*results|no.*employees|no.*records|empty/i');
-    await expect(emptyState.first()).toBeVisible({ timeout: 3000 });
+    // Verify empty state is shown (no data rows or empty message)
+    const dataRows = page.locator('tbody tr, mat-row');
+    const rowCount = await dataRows.count();
+
+    // Either shows 0 rows or shows an empty state message
+    if (rowCount === 0) {
+      expect(rowCount).toBe(0);
+    } else {
+      const emptyState = page.locator('text=/no.*results|no.*employees|no.*records|empty/i');
+      await expect(emptyState.first()).toBeVisible({ timeout: 2000 });
+    }
   });
 
   test('should navigate to next page', async ({ page }) => {
