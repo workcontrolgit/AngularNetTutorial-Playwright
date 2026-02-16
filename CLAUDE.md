@@ -560,6 +560,25 @@ npx playwright test --workers=4
 These users must match the actual IdentityServer configuration in the parent repository:
 - `TokenService/Duende-IdentityServer/src/Duende.Admin/identityserverdata.json`
 
+### Git Commit Guidelines
+
+**IMPORTANT:** When committing code changes, do NOT include the `Co-Authored-By: Claude` line in commit messages.
+
+**Correct commit format:**
+```bash
+git commit -m "Fix validation tests to trigger on form submission
+
+Updated validation tests to click Create/Update button instead of using
+field blur, matching Angular Material's actual validation behavior."
+```
+
+**Incorrect (do not use):**
+```bash
+git commit -m "Fix validation tests
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
 ## Troubleshooting
 
 ### Tests Timeout Waiting for Login
