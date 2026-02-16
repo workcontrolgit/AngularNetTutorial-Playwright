@@ -31,22 +31,33 @@ test.describe('Employee List', () => {
   });
 
   test('should change page size', async ({ page }) => {
-    // Find page size selector
-    const pageSizeSelector = page.locator('mat-select[aria-label*="Items per page"], select[name*="pageSize"]');
+    // Find page size selector in mat-paginator
+    const pageSizeSelector = page.locator('mat-paginator mat-select');
 
     if (await pageSizeSelector.isVisible({ timeout: 2000 })) {
-      // Get initial row count
-      const initialRows = await page.locator('tr, mat-row').count();
+      // Get initial row count (excluding header)
+      const initialRows = await page.locator('tbody tr, mat-row').count();
 
-      // Change page size
-      await pageSizeSelector.click();
-      await page.locator('mat-option, option').filter({ hasText: /25|50/i }).first().click();
+      // Scroll paginator into view and click with force
+      await pageSizeSelector.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+      await pageSizeSelector.click({ force: true });
+      await page.waitForTimeout(500);
+
+      // Select 25 items per page
+      const option25 = page.locator('mat-option').filter({ hasText: '25' });
+      if (await option25.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await option25.click();
+      } else {
+        // Try 50 if 25 not available
+        await page.locator('mat-option').filter({ hasText: '50' }).first().click();
+      }
 
       // Wait for table to update
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(1500);
 
-      // Verify row count changed (or stayed same if less than new page size)
-      const newRows = await page.locator('tr, mat-row').count();
+      // Verify row count changed (should show more rows if there are more than 10 total)
+      const newRows = await page.locator('tbody tr, mat-row').count();
       expect(newRows).toBeGreaterThanOrEqual(initialRows);
     } else {
       test.skip();
@@ -186,24 +197,25 @@ test.describe('Employee List', () => {
   });
 
   test('should navigate to next page', async ({ page }) => {
-    // Find next page button
-    const nextButton = page.locator('button[aria-label*="Next"], .next-page, button').filter({ hasText: /next|>/i });
+    // Find next page button in Material paginator
+    const nextButton = page.locator('mat-paginator button[aria-label*="Next page"]');
 
     if (await nextButton.isVisible({ timeout: 2000 })) {
-      // Check if button is enabled
-      const isEnabled = await nextButton.isEnabled();
+      // Check if button is enabled (not disabled)
+      const isDisabled = await nextButton.isDisabled();
 
-      if (isEnabled) {
-        // Get current page info
-        const paginationInfo = await page.locator('text=/\\d+-\\d+ of \\d+/i').first().textContent();
+      if (!isDisabled) {
+        // Get current page range text
+        const rangeLabel = page.locator('mat-paginator .mat-mdc-paginator-range-label');
+        const initialRange = await rangeLabel.textContent();
 
-        // Click next
-        await nextButton.click();
-        await page.waitForTimeout(1000);
+        // Click next page
+        await nextButton.click({ force: true });
+        await page.waitForTimeout(1500);
 
         // Verify page changed
-        const newPaginationInfo = await page.locator('text=/\\d+-\\d+ of \\d+/i').first().textContent();
-        expect(newPaginationInfo).not.toBe(paginationInfo);
+        const newRange = await rangeLabel.textContent();
+        expect(newRange).not.toBe(initialRange);
       } else {
         // Only one page of data
         test.skip();
@@ -215,27 +227,28 @@ test.describe('Employee List', () => {
   });
 
   test('should navigate to previous page', async ({ page }) => {
-    // First go to page 2
-    const nextButton = page.locator('button[aria-label*="Next"], .next-page');
+    // First navigate to next page (to enable previous button)
+    const nextButton = page.locator('mat-paginator button[aria-label*="Next page"]');
 
-    if (await nextButton.isVisible({ timeout: 2000 }) && await nextButton.isEnabled()) {
-      await nextButton.click();
-      await page.waitForTimeout(1000);
+    if (await nextButton.isVisible({ timeout: 2000 }) && !(await nextButton.isDisabled())) {
+      await nextButton.click({ force: true });
+      await page.waitForTimeout(1500);
 
-      // Now try to go back
-      const prevButton = page.locator('button[aria-label*="Previous"], .previous-page, button').filter({ hasText: /previous|</i });
+      // Now navigate back to previous page
+      const prevButton = page.locator('mat-paginator button[aria-label*="Previous page"]');
 
-      if (await prevButton.isVisible()) {
-        // Get current page info
-        const paginationInfo = await page.locator('text=/\\d+-\\d+ of \\d+/i').first().textContent();
+      if (await prevButton.isVisible({ timeout: 2000 })) {
+        // Get current page range
+        const rangeLabel = page.locator('mat-paginator .mat-mdc-paginator-range-label');
+        const beforeRange = await rangeLabel.textContent();
 
         // Click previous
-        await prevButton.click();
-        await page.waitForTimeout(1000);
+        await prevButton.click({ force: true });
+        await page.waitForTimeout(1500);
 
-        // Verify page changed
-        const newPaginationInfo = await page.locator('text=/\\d+-\\d+ of \\d+/i').first().textContent();
-        expect(newPaginationInfo).not.toBe(paginationInfo);
+        // Verify page changed back
+        const afterRange = await rangeLabel.textContent();
+        expect(afterRange).not.toBe(beforeRange);
       }
     } else {
       test.skip();
