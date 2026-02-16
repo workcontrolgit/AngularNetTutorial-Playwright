@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 import { createEmployeeData } from '../../fixtures/data.fixtures';
 
 /**
@@ -15,7 +15,8 @@ test.describe('Employee Management - Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Login as Manager (has create/edit permissions)
     await loginAsRole(page, 'manager');
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+    // Verify logged in by checking for dashboard heading
+    await expect(page.locator('h1:has-text("Dashboard")')).toBeVisible();
   });
 
   test('should view employee list', async ({ page }) => {
@@ -40,6 +41,10 @@ test.describe('Employee Management - Smoke Tests', () => {
   });
 
   test('should create new employee', async ({ page }) => {
+    // Logout and login as HRAdmin (only HRAdmin can create employees)
+    await logout(page);
+    await loginAsRole(page, 'hradmin');
+
     // Generate test employee data
     const employeeData = createEmployeeData({
       firstName: 'John',
@@ -59,17 +64,57 @@ test.describe('Employee Management - Smoke Tests', () => {
     // Wait for form to appear
     await page.waitForSelector('form, mat-dialog, .employee-form', { timeout: 5000 });
 
-    // Fill in employee form
-    await page.fill('input[name*="firstName"], input[formControlName="firstName"]', employeeData.firstName);
-    await page.fill('input[name*="lastName"], input[formControlName="lastName"]', employeeData.lastName);
-    await page.fill('input[name*="email"], input[formControlName="email"]', employeeData.email);
+    // Fill required text fields
+    await page.fill('input[formControlName="firstName"], input[name*="firstName"]', employeeData.firstName);
+    await page.fill('input[formControlName="lastName"], input[name*="lastName"]', employeeData.lastName);
+    await page.fill('input[formControlName="email"], input[name*="email"]', employeeData.email);
 
-    // Fill optional fields if visible
+    // Fill optional fields with timeout
     try {
-      await page.fill('input[name*="employeeNumber"], input[formControlName="employeeNumber"]', employeeData.employeeNumber, { timeout: 2000 });
-      await page.fill('input[name*="phone"], input[formControlName="phoneNumber"]', employeeData.phoneNumber, { timeout: 2000 });
-    } catch {
-      // Optional fields might not be visible
+      await page.fill('input[formControlName="employeeNumber"], input[name*="employeeNumber"]', employeeData.employeeNumber, { timeout: 3000 });
+    } catch {}
+
+    try {
+      await page.fill('input[formControlName="phoneNumber"], input[name*="phone"]', employeeData.phoneNumber, { timeout: 3000 });
+    } catch {}
+
+    // Fill date of birth
+    const dobInput = page.locator('input[formControlName="dateOfBirth"], input[name*="dateOfBirth"], input[type="date"]');
+    if (await dobInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await dobInput.fill('1990-01-01');
+    }
+
+    // Fill salary
+    const salaryInput = page.locator('input[formControlName="salary"], input[name*="salary"]');
+    if (await salaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await salaryInput.fill(employeeData.salary.toString());
+    }
+
+    // Select department dropdown
+    const departmentSelect = page.locator('mat-select').filter({ hasText: /department/i }).first();
+    if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await departmentSelect.click();
+      await page.waitForTimeout(300);
+      await page.locator('mat-option').first().click();
+      await page.waitForTimeout(300);
+    }
+
+    // Select position dropdown
+    const positionSelect = page.locator('mat-select').filter({ hasText: /position/i }).first();
+    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await positionSelect.click();
+      await page.waitForTimeout(300);
+      await page.locator('mat-option').first().click();
+      await page.waitForTimeout(300);
+    }
+
+    // Select gender dropdown
+    const genderSelect = page.locator('mat-select').filter({ hasText: /gender/i }).first();
+    if (await genderSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await genderSelect.click();
+      await page.waitForTimeout(300);
+      await page.locator('mat-option').first().click();
+      await page.waitForTimeout(300);
     }
 
     // Submit form
@@ -123,8 +168,8 @@ test.describe('Employee Management - Smoke Tests', () => {
   });
 
   test('should view employee list as Employee role (read-only)', async ({ page }) => {
-    // Logout and login as Employee role
-    await page.goto('/');
+    // Logout from Manager and login as Employee role
+    await logout(page);
     await loginAsRole(page, 'employee');
 
     // Navigate to employees page

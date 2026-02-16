@@ -1,5 +1,7 @@
-import { APIRequestContext } from '@playwright/test';
+import { APIRequestContext, Page, Browser, chromium } from '@playwright/test';
 import type { EmployeeData, DepartmentData } from './data.fixtures';
+import { loginAsRole, getTokenFromProfile } from './auth.fixtures';
+import testUsers from '../config/test-users.json';
 
 /**
  * API Fixtures
@@ -8,9 +10,54 @@ import type { EmployeeData, DepartmentData } from './data.fixtures';
  * - Creating resources via API
  * - Deleting resources for test cleanup
  * - Making authenticated API requests
+ * - Token acquisition for roles
  */
 
 const API_BASE_URL = 'https://localhost:44378/api/v1';
+
+/**
+ * Gets an access token for a specific role using browser-based authentication
+ *
+ * Creates a temporary browser session, logs in as the specified role,
+ * extracts the access token from the profile page, and returns it.
+ *
+ * @param request - Playwright APIRequestContext (not used but kept for API compatibility)
+ * @param role - User role ('employee', 'manager', or 'hradmin')
+ * @returns Promise resolving to access token string
+ *
+ * @example
+ * const token = await getTokenForRole(request, 'hradmin');
+ * await createEmployee(request, token, employeeData);
+ */
+export async function getTokenForRole(
+  request: APIRequestContext,
+  role: 'employee' | 'manager' | 'hradmin'
+): Promise<string> {
+  // Launch a temporary browser to get the token
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    ignoreHTTPSErrors: true,
+  });
+  const page = await context.newPage();
+
+  try {
+    // Login as the specified role
+    await loginAsRole(page, role);
+
+    // Extract token from profile page
+    const token = await getTokenFromProfile(page);
+
+    if (!token) {
+      throw new Error(`Failed to extract token for role: ${role}`);
+    }
+
+    return token;
+  } finally {
+    // Always clean up the browser
+    await context.close();
+    await browser.close();
+  }
+}
 
 /**
  * Makes an authenticated API request

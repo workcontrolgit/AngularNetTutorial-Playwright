@@ -31,6 +31,16 @@ export async function loginAs(
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
+  // Clear any existing auth tokens to ensure clean state
+  await clearAuthTokens(page);
+
+  // Reload page after clearing tokens to ensure Guest state
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+
+  // Wait for page to fully render
+  await page.waitForTimeout(1000);
+
   // Click user icon in upper right corner
   const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
   await userIcon.click();
@@ -38,6 +48,9 @@ export async function loginAs(
 
   // Click "Login" option from dropdown menu
   const loginOption = page.locator('button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")').first();
+
+  // Wait for login option to be visible before clicking
+  await loginOption.waitFor({ state: 'visible', timeout: 5000 });
   await loginOption.click();
 
   // Wait for redirect to IdentityServer login page
@@ -184,6 +197,12 @@ export async function logout(page: Page): Promise<void> {
   // Wait for page to settle
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1000);
+
+  // Clear all auth tokens to ensure complete logout
+  await clearAuthTokens(page);
+
+  // Wait for Guest state to be visible
+  await page.waitForTimeout(500);
 }
 
 /**

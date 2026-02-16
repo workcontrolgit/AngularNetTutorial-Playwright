@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 
 /**
  * Dashboard Navigation Tests
@@ -101,7 +101,7 @@ test.describe('Dashboard Navigation', () => {
 
   test('should navigate to positions from dashboard for HRAdmin', async ({ page }) => {
     // Logout and login as HRAdmin
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'hradmin');
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
@@ -125,7 +125,7 @@ test.describe('Dashboard Navigation', () => {
 
   test('should navigate to salary ranges from dashboard for HRAdmin', async ({ page }) => {
     // Logout and login as HRAdmin
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'hradmin');
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
@@ -158,7 +158,7 @@ test.describe('Dashboard Navigation', () => {
 
   test('should hide create buttons for Employee role', async ({ page }) => {
     // Logout and login as Employee
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'employee');
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
@@ -172,8 +172,8 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('should navigate using sidebar menu', async ({ page }) => {
-    // Find sidebar menu
-    const sidebarMenu = page.locator('mat-sidenav, aside, nav, .sidebar');
+    // Find sidebar menu (use first to avoid strict mode violation)
+    const sidebarMenu = page.locator('mat-sidenav, aside, nav, .sidebar').first();
 
     if (await sidebarMenu.isVisible({ timeout: 3000 })) {
       // Find employees menu item
@@ -192,8 +192,8 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('should navigate using top navigation bar', async ({ page }) => {
-    // Find top navigation bar
-    const topNav = page.locator('mat-toolbar, header, .navbar');
+    // Find top navigation bar (use first to avoid strict mode violation)
+    const topNav = page.locator('mat-toolbar, header, .navbar').first();
 
     if (await topNav.isVisible({ timeout: 3000 })) {
       // Find navigation links
@@ -230,8 +230,8 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('should highlight active menu item', async ({ page }) => {
-    // Find sidebar or navigation menu
-    const menu = page.locator('mat-sidenav, nav, .sidebar');
+    // Find sidebar or navigation menu (use first to avoid strict mode violation)
+    const menu = page.locator('mat-sidenav, nav, .sidebar').first();
 
     if (await menu.isVisible({ timeout: 3000 })) {
       // Dashboard should be active/highlighted

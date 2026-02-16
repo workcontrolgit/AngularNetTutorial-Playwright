@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 
 /**
  * Employee Edit Tests
@@ -14,8 +14,8 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 test.describe('Employee Edit', () => {
   test.beforeEach(async ({ page }) => {
-    // Login as Manager (has edit permission)
-    await loginAsRole(page, 'manager');
+    // Login as HRAdmin (has full edit permission)
+    await loginAsRole(page, 'hradmin');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
   });
@@ -253,7 +253,7 @@ test.describe('Employee Edit', () => {
 
   test('should not allow Employee role to edit', async ({ page }) => {
     // Logout and login as Employee
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'employee');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');

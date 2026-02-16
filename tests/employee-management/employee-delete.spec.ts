@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 import { createEmployeeData } from '../../fixtures/data.fixtures';
 import { createEmployee, getTokenForRole, deleteEmployee } from '../../fixtures/api.fixtures';
 
@@ -15,75 +15,42 @@ import { createEmployee, getTokenForRole, deleteEmployee } from '../../fixtures/
  */
 
 test.describe('Employee Delete', () => {
-  let testEmployeeId: number;
-
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page }) => {
     // Login as HRAdmin (has delete permission)
     await loginAsRole(page, 'hradmin');
-
-    // Create a test employee via API for deletion tests
-    try {
-      const token = await getTokenForRole(request, 'hradmin');
-      const employeeData = createEmployeeData({
-        firstName: 'ToDelete',
-        lastName: `Test${Date.now()}`,
-      });
-
-      const createdEmployee = await createEmployee(request, token, employeeData);
-      testEmployeeId = createdEmployee.id || createdEmployee.employeeId;
-    } catch (error) {
-      console.log('Could not create test employee via API:', error);
-    }
-
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
   });
 
-  test.afterEach(async ({ request }) => {
-    // Cleanup: delete test employee if it still exists
-    if (testEmployeeId) {
-      try {
-        const token = await getTokenForRole(request, 'hradmin');
-        await deleteEmployee(request, token, testEmployeeId);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-  });
-
   test('should show delete confirmation dialog', async ({ page }) => {
-    // Find delete button for first employee
-    const firstEmployee = page.locator('tr, mat-row').filter({ hasText: /ToDelete/i }).first();
+    // Find first employee row (skip header)
+    const firstEmployee = page.locator('tr, mat-row').nth(1);
 
-    if (await firstEmployee.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const deleteButton = firstEmployee.locator('button').filter({ hasText: /delete|remove/i }).first();
+    const deleteButton = firstEmployee.locator('button').filter({ hasText: /delete|remove/i }).first();
 
-      if (await deleteButton.isVisible({ timeout: 2000 })) {
-        await deleteButton.click();
+    if (await deleteButton.isVisible({ timeout: 2000 })) {
+      await deleteButton.click();
 
-        // Wait for confirmation dialog
-        await page.waitForTimeout(1000);
+      // Wait for confirmation dialog
+      await page.waitForTimeout(1000);
 
-        // Verify confirmation dialog appears
-        const confirmDialog = page.locator('mat-dialog, .modal, .dialog, [role="dialog"]');
-        await expect(confirmDialog.first()).toBeVisible();
+      // Verify confirmation dialog appears
+      const confirmDialog = page.locator('mat-dialog, .modal, .dialog, [role="dialog"]');
+      await expect(confirmDialog.first()).toBeVisible();
 
-        // Verify confirmation message
-        const confirmMessage = page.locator('text=/are you sure|confirm|delete/i');
-        await expect(confirmMessage.first()).toBeVisible();
+      // Verify confirmation message
+      const confirmMessage = page.locator('text=/are you sure|confirm|delete/i');
+      await expect(confirmMessage.first()).toBeVisible();
 
-        // Verify buttons (confirm and cancel)
-        const confirmButton = page.locator('button').filter({ hasText: /yes|confirm|delete/i });
-        const cancelButton = page.locator('button').filter({ hasText: /no|cancel/i });
+      // Verify buttons (confirm and cancel)
+      const confirmButton = page.locator('button').filter({ hasText: /yes|confirm|delete/i });
+      const cancelButton = page.locator('button').filter({ hasText: /no|cancel/i });
 
-        await expect(confirmButton.first()).toBeVisible();
-        await expect(cancelButton.first()).toBeVisible();
+      await expect(confirmButton.first()).toBeVisible();
+      await expect(cancelButton.first()).toBeVisible();
 
-        // Cancel for this test
-        await cancelButton.first().click();
-      } else {
-        test.skip();
-      }
+      // Cancel for this test
+      await cancelButton.first().click();
     } else {
       test.skip();
     }
@@ -225,7 +192,7 @@ test.describe('Employee Delete', () => {
 
   test('should not allow Manager role to delete', async ({ page }) => {
     // Logout and login as Manager
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'manager');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
@@ -234,13 +201,13 @@ test.describe('Employee Delete', () => {
     const deleteButtons = page.locator('button').filter({ hasText: /delete|remove/i });
     const hasDeleteButtons = await deleteButtons.first().isVisible({ timeout: 2000 }).catch(() => false);
 
-    // Manager should NOT have delete buttons
+    // Manager should NOT have delete buttons (only HRAdmin can delete)
     expect(hasDeleteButtons).toBe(false);
   });
 
   test('should not allow Employee role to delete', async ({ page }) => {
     // Logout and login as Employee
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'employee');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');

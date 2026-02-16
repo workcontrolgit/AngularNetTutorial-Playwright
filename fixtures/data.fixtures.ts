@@ -12,7 +12,7 @@ export interface EmployeeData {
   email?: string;
   phoneNumber?: string;
   dateOfBirth?: string;
-  gender?: 'Male' | 'Female' | 'Other';
+  gender?: 0 | 1 | 2; // 0 = Male, 1 = Female, 2 = Other (API enum values)
   hireDate?: string;
   salary?: number;
   positionId?: number;
@@ -102,7 +102,7 @@ export function createEmployeeData(overrides: EmployeeData = {}): Required<Emplo
     email: overrides.email || generateEmail(firstName, lastName),
     phoneNumber: overrides.phoneNumber || generatePhoneNumber(),
     dateOfBirth: overrides.dateOfBirth || generateRandomDate(1970, 2000),
-    gender: overrides.gender || 'Male',
+    gender: overrides.gender ?? 0, // 0 = Male (default)
     hireDate: overrides.hireDate || generateRandomDate(2020, 2024),
     salary: overrides.salary || Math.floor(Math.random() * 50000) + 50000,
     positionId: overrides.positionId || 1,
