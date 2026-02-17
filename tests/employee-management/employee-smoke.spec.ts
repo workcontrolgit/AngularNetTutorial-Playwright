@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 import { createEmployeeData } from '../../fixtures/data.fixtures';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * Employee Management Smoke Tests
@@ -61,76 +62,28 @@ test.describe('Employee Management - Smoke Tests', () => {
     await expect(createButton.first()).toBeVisible();
     await createButton.first().click();
 
-    // Wait for form to appear
-    await page.waitForSelector('form, mat-dialog, .employee-form', { timeout: 5000 });
+    // Use Page Object to fill and submit form
+    const employeeForm = new EmployeeFormPage(page);
+    await employeeForm.waitForForm();
 
-    // Fill required text fields
-    await page.fill('input[formControlName="firstName"], input[name*="firstName"]', employeeData.firstName);
-    await page.fill('input[formControlName="lastName"], input[name*="lastName"]', employeeData.lastName);
-    await page.fill('input[formControlName="email"], input[name*="email"]', employeeData.email);
+    // Fill complete form using Page Object (cleaner and more maintainable)
+    await employeeForm.fillForm({
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      employeeNumber: employeeData.employeeNumber,
+      dateOfBirth: '01/01/1990',
+      phoneNumber: employeeData.phoneNumber,
+      salary: employeeData.salary,
+      department: 1,  // Skip placeholder
+      position: 1,    // Skip placeholder
+      gender: 1,      // Skip placeholder
+    });
 
-    // Fill optional fields with timeout
-    try {
-      await page.fill('input[formControlName="employeeNumber"], input[name*="employeeNumber"]', employeeData.employeeNumber, { timeout: 3000 });
-    } catch {}
-
-    try {
-      await page.fill('input[formControlName="phoneNumber"], input[name*="phone"]', employeeData.phoneNumber, { timeout: 3000 });
-    } catch {}
-
-    // Fill date of birth
-    const dobInput = page.locator('input[formControlName="dateOfBirth"], input[name*="dateOfBirth"], input[type="date"]');
-    if (await dobInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await dobInput.fill('1990-01-01');
-    }
-
-    // Fill salary
-    const salaryInput = page.locator('input[formControlName="salary"], input[name*="salary"]');
-    if (await salaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await salaryInput.fill(employeeData.salary.toString());
-    }
-
-    // Select department dropdown
-    const departmentSelect = page.locator('mat-select').filter({ hasText: /department/i }).first();
-    if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await departmentSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator('mat-option').first().click();
-      await page.waitForTimeout(300);
-    }
-
-    // Select position dropdown
-    const positionSelect = page.locator('mat-select').filter({ hasText: /position/i }).first();
-    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await positionSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator('mat-option').first().click();
-      await page.waitForTimeout(300);
-    }
-
-    // Select gender dropdown
-    const genderSelect = page.locator('mat-select').filter({ hasText: /gender/i }).first();
-    if (await genderSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await genderSelect.click();
-      await page.waitForTimeout(300);
-      await page.locator('mat-option').first().click();
-      await page.waitForTimeout(300);
-    }
-
-    // Submit form
-    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-    await expect(submitButton.first()).toBeVisible();
-    await submitButton.first().click();
-
-    // Wait for success message or redirect
-    await page.waitForTimeout(2000);
-
-    // Verify success (either message or redirect to list)
-    const successIndicator = page.locator('text=/success|created|saved/i, .success, mat-snack-bar');
-    const isOnListPage = page.url().includes('/employees') && !page.url().includes('/create');
-
-    const success = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false) || isOnListPage;
-    expect(success).toBe(true);
+    // Submit and verify (handles API errors gracefully)
+    await employeeForm.submit();
+    const result = await employeeForm.verifySubmissionSuccess();
+    expect(result.success).toBe(true);
   });
 
   test('should view employee detail', async ({ page }) => {
