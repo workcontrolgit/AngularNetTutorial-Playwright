@@ -33,10 +33,9 @@ export interface PositionData {
 }
 
 export interface SalaryRangeData {
-  title?: string;
+  name?: string;
   minSalary?: number;
   maxSalary?: number;
-  currency?: string;
 }
 
 /**
@@ -174,10 +173,9 @@ export function createSalaryRangeData(overrides: SalaryRangeData = {}): Required
   const baseMax = overrides.maxSalary || baseMin + 30000;
 
   return {
-    title: overrides.title || `Test Salary Range ${rangeNumber}`,
+    name: overrides.name || `Test Salary Range ${rangeNumber}`,
     minSalary: baseMin,
     maxSalary: baseMax,
-    currency: overrides.currency || 'USD',
   };
 }
 

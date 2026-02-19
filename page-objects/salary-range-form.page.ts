@@ -4,39 +4,37 @@ import { BaseFormPage } from './base-form.page';
 /**
  * Salary Range Form Page Object
  *
- * Covers the create/edit salary range form (HRAdmin only).
- * Shared behaviour (submit, cancel, validation, success) comes from BaseFormPage.
+ * Angular source facts:
+ * - Form fields: name (required, maxLength(100)), minSalary (required, min(0)), maxSalary (required, min(0))
+ * - Custom validator: minSalary must be less than maxSalary (shows when form.touched)
+ * - No currency field in the form — currency is not part of the form
+ * - Submit button is NOT disabled by validation (no [disabled]="salaryRangeForm.invalid")
+ * - onSubmit() does NOT call markAllAsTouched() — errors only appear after focus+blur
  */
 export class SalaryRangeFormPage extends BaseFormPage {
-  readonly titleInput: Locator;
+  readonly nameInput: Locator;
   readonly minSalaryInput: Locator;
   readonly maxSalaryInput: Locator;
 
   constructor(page: Page) {
     super(page, '/salary-ranges');
 
-    this.titleInput = page.locator('input[formControlName="title"], input[name*="title"]');
-    this.minSalaryInput = page.locator(
-      'input[formControlName="minSalary"], input[name*="minSalary"], input[name*="min"]'
-    );
-    this.maxSalaryInput = page.locator(
-      'input[formControlName="maxSalary"], input[name*="maxSalary"], input[name*="max"]'
-    );
+    this.nameInput = page.locator('input[formControlName="name"]');
+    this.minSalaryInput = page.locator('input[formControlName="minSalary"]');
+    this.maxSalaryInput = page.locator('input[formControlName="maxSalary"]');
   }
 
   protected async isFormStillFilled(): Promise<boolean> {
-    const titleValue = await this.titleInput.inputValue().catch(() => '');
-    if (titleValue.length > 0) return true;
-    // Fall back to checking min salary (salary range may not have a title field)
+    const nameValue = await this.nameInput.inputValue().catch(() => '');
+    if (nameValue.length > 0) return true;
     const minValue = await this.minSalaryInput.inputValue().catch(() => '');
     return minValue.length > 0;
   }
 
   // ── Field fill methods ──────────────────────────────────────────────────
 
-  async fillTitle(title: string) {
-    const isVisible = await this.titleInput.isVisible({ timeout: 2000 }).catch(() => false);
-    if (isVisible) await this.titleInput.fill(title);
+  async fillName(name: string) {
+    await this.nameInput.fill(name);
   }
 
   async fillMinSalary(amount: number | string) {
@@ -49,8 +47,8 @@ export class SalaryRangeFormPage extends BaseFormPage {
 
   // ── fillForm convenience method ─────────────────────────────────────────
 
-  async fillForm(data: { title?: string; minSalary?: number; maxSalary?: number }) {
-    if (data.title) await this.fillTitle(data.title);
+  async fillForm(data: { name?: string; minSalary?: number; maxSalary?: number }) {
+    if (data.name) await this.fillName(data.name);
     if (data.minSalary !== undefined) await this.fillMinSalary(data.minSalary);
     if (data.maxSalary !== undefined) await this.fillMaxSalary(data.maxSalary);
   }
