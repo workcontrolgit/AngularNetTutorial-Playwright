@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { createPositionData } from '../../fixtures/data.fixtures';
+import { PositionListPage } from '../../page-objects/position-list.page';
+import { PositionFormPage } from '../../page-objects/position-form.page';
 
 /**
  * Position CRUD Tests (HRAdmin Only)
@@ -18,147 +20,95 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
   test.beforeEach(async ({ page }) => {
     // Login as HRAdmin (only role with position access)
     await loginAsRole(page, 'hradmin');
-    await page.goto('/positions');
-    await page.waitForLoadState('networkidle');
+    const list = new PositionListPage(page);
+    await list.goto();
   });
 
   test('should allow HRAdmin to view positions', async ({ page }) => {
-    // Verify positions page loads
-    const pageTitle = page.locator('h1, h2, h3').filter({ hasText: /positions/i });
-    await expect(pageTitle.first()).toBeVisible({ timeout: 5000 });
+    const list = new PositionListPage(page);
 
-    // Verify table/list is visible
-    const positionsTable = page.locator('table, mat-table, .positions-list');
-    await expect(positionsTable.first()).toBeVisible({ timeout: 5000 });
+    await list.waitForLoad();
+    await expect(list.pageTitle.first()).toBeVisible({ timeout: 5000 });
 
-    // Verify at least header row exists
-    const rows = page.locator('tr, mat-row');
-    const rowCount = await rows.count();
+    const rowCount = await list.getRowCount();
     expect(rowCount).toBeGreaterThan(0);
   });
 
   test('should allow HRAdmin to create position', async ({ page }) => {
-    // Find and click create button
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-      // Fill position form
       const positionData = createPositionData({
         name: `TestPosition_${Date.now()}`,
         description: 'Test position created by E2E test',
       });
 
-      const nameInput = page.locator('input[name*="name"], input[formControlName="name"]');
-      const descriptionInput = page.locator('textarea[name*="description"], textarea[formControlName="description"], input[name*="description"]');
+      await form.fillForm({ title: positionData.name, description: positionData.description });
+      await form.submit();
 
-      await nameInput.fill(positionData.name);
-
-      if (await descriptionInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descriptionInput.fill(positionData.description);
-      }
-
-      // Submit form
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
-
-      await page.waitForTimeout(2000);
-
-      // Verify success
-      const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created|saved/i });
-      const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
-
-      const wasRedirected = !page.url().includes('create') && !page.url().includes('new');
-
-      expect(hasSuccess || wasRedirected).toBe(true);
+      const result = await form.verifySubmissionSuccess();
+      expect(result.success).toBe(true);
     } else {
       test.skip();
     }
   });
 
   test('should allow HRAdmin to edit position', async ({ page }) => {
-    // Find first position row
-    const firstPosition = page.locator('tr, mat-row').nth(1);
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
+
+    const firstPosition = list.getRow(0);
 
     if (await firstPosition.isVisible({ timeout: 3000 })) {
-      // Click edit button
+      // Click edit button (or fall back to row click)
       const editButton = firstPosition.locator('button, a').filter({ hasText: /edit|update/i }).first();
-
       if (await editButton.isVisible({ timeout: 2000 })) {
         await editButton.click();
+        await page.waitForTimeout(1000);
       } else {
-        // Try clicking the row itself
         await firstPosition.click();
+        await page.waitForTimeout(1000);
       }
 
-      await page.waitForTimeout(2000);
+      await form.fillDescription('Updated position description via E2E test');
+      await form.submit();
 
-      // Update description
-      const descriptionInput = page.locator('textarea[name*="description"], textarea[formControlName="description"], input[name*="description"]');
-
-      if (await descriptionInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descriptionInput.clear();
-        await descriptionInput.fill('Updated position description via E2E test');
-      }
-
-      // Submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
-      await submitButton.first().click();
-
-      await page.waitForTimeout(2000);
-
-      // Verify success
-      const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|updated|saved/i });
-      const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
-
-      const wasRedirected = !page.url().includes('edit');
-
-      expect(hasSuccess || wasRedirected).toBe(true);
+      const result = await form.verifySubmissionSuccess();
+      expect(result.success).toBe(true);
     } else {
       test.skip();
     }
   });
 
   test('should allow HRAdmin to delete position', async ({ page }) => {
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
+
     // First create a test position to delete
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
-
-      // Create position
       const positionData = createPositionData({
         name: `ToDelete_${Date.now()}`,
         description: 'Position to be deleted',
       });
 
-      const nameInput = page.locator('input[name*="name"], input[formControlName="name"]');
-      await nameInput.fill(positionData.name);
-
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+      await form.fillForm({ title: positionData.name });
+      await form.submit();
 
       await page.waitForTimeout(2000);
 
       // Navigate back to list
-      await page.goto('/positions');
-      await page.waitForLoadState('networkidle');
+      await list.goto();
 
       // Search for the position
-      const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-      if (await searchInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await searchInput.fill('ToDelete');
-        await page.waitForTimeout(1000);
-      }
-
-      // Find the position row
-      const positionRow = page.locator('tr, mat-row').filter({ hasText: /ToDelete/i }).first();
+      await list.search('ToDelete');
+      const positionRow = list.getRowByText('ToDelete');
 
       if (await positionRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-        // Click delete button
         const deleteButton = positionRow.locator('button').filter({ hasText: /delete|remove/i }).first();
 
         if (await deleteButton.isVisible({ timeout: 2000 })) {
@@ -171,7 +121,6 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
 
           await page.waitForTimeout(2000);
 
-          // Verify success
           const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|deleted|removed/i });
           const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
 
@@ -188,49 +137,34 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
   });
 
   test('should validate required fields for position creation', async ({ page }) => {
-    // Click create button
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
+      await form.submit();
 
-      // Try to submit empty form
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
-
-      await page.waitForTimeout(1000);
-
-      // Verify validation error
-      const error = page.locator('.error, .mat-error, .invalid-feedback, [role="alert"]');
-      const errorCount = await error.count();
-
+      const errorCount = await form.getValidationErrorCount();
       expect(errorCount).toBeGreaterThan(0);
 
-      // Verify form is still visible (not submitted)
-      const form = page.locator('form, mat-dialog');
-      await expect(form.first()).toBeVisible();
+      // Form should still be visible (not submitted)
+      await form.waitForForm();
     } else {
       test.skip();
     }
   });
 
   test('should search positions by name', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
+    const list = new PositionListPage(page);
 
-    if (await searchInput.isVisible({ timeout: 2000 })) {
-      // Get first position name from the list
-      const firstRow = page.locator('tr, mat-row').nth(1);
+    if (await list.searchInput.isVisible({ timeout: 2000 })) {
+      const firstRow = list.getRow(0);
       const positionName = await firstRow.locator('td, mat-cell').first().textContent();
 
       if (positionName && positionName.trim()) {
-        // Search for this position
-        await searchInput.fill(positionName.trim().substring(0, 3)); // Search first 3 chars
-        await page.waitForTimeout(1000);
+        await list.search(positionName.trim().substring(0, 3));
 
-        // Verify filtered results
-        const visibleRows = page.locator('tr, mat-row').filter({ hasText: new RegExp(positionName.trim().substring(0, 3), 'i') });
+        const visibleRows = list.rows.filter({ hasText: new RegExp(positionName.trim().substring(0, 3), 'i') });
         const count = await visibleRows.count();
 
         expect(count).toBeGreaterThan(0);
@@ -243,8 +177,10 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
   });
 
   test('should display position details', async ({ page }) => {
-    // Click on first position
-    const firstPosition = page.locator('tr, mat-row').nth(1);
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
+
+    const firstPosition = list.getRow(0);
 
     if (await firstPosition.isVisible({ timeout: 3000 })) {
       await firstPosition.click();
@@ -252,12 +188,12 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
 
       // Verify we're on detail/edit page or dialog opened
       const isOnDetailPage = page.url().includes('position') || page.url().includes('edit');
-      const isDialogOpen = await page.locator('mat-dialog, .modal, [role="dialog"]').isVisible({ timeout: 2000 }).catch(() => false);
+      const isDialogOpen = await form.isDialogVisible();
 
       expect(isOnDetailPage || isDialogOpen).toBe(true);
 
-      // Verify position details are visible
-      const nameField = page.locator('input[name*="name"], input[formControlName="name"], text=/name/i').first();
+      // Verify position title/name field is visible
+      const nameField = form.titleInput;
       await expect(nameField).toBeVisible({ timeout: 3000 });
     } else {
       test.skip();
@@ -265,25 +201,20 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
   });
 
   test('should handle duplicate position names', async ({ page }) => {
+    const list = new PositionListPage(page);
+    const form = new PositionFormPage(page);
+
     // Get name of existing position
-    const firstRow = page.locator('tr, mat-row').nth(1);
+    const firstRow = list.getRow(0);
     const existingName = await firstRow.locator('td, mat-cell').first().textContent();
 
     if (existingName && existingName.trim()) {
-      // Try to create position with duplicate name
-      const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
-
-      if (await createButton.isVisible({ timeout: 3000 })) {
-        await createButton.first().click();
-        await page.waitForTimeout(1000);
+      if (await list.hasCreatePermission()) {
+        await list.clickCreate();
 
         // Fill with duplicate name
-        const nameInput = page.locator('input[name*="name"], input[formControlName="name"]');
-        await nameInput.fill(existingName.trim());
-
-        // Submit
-        const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-        await submitButton.first().click();
+        await form.fillTitle(existingName.trim());
+        await form.submit();
 
         await page.waitForTimeout(2000);
 
@@ -291,8 +222,7 @@ test.describe('Position CRUD (HRAdmin Only)', () => {
         const errorMessage = page.locator('mat-snack-bar, .toast, .notification, .mat-error, .error').filter({ hasText: /duplicate|already.*exists|conflict|unique/i });
         const hasError = await errorMessage.isVisible({ timeout: 3000 }).catch(() => false);
 
-        const form = page.locator('form, mat-dialog');
-        const formVisible = await form.isVisible({ timeout: 2000 }).catch(() => false);
+        const formVisible = await form.form.isVisible({ timeout: 2000 }).catch(() => false);
 
         expect(hasError || formVisible).toBe(true);
       } else {

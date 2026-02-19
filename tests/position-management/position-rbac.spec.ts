@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
+import { PositionListPage } from '../../page-objects/position-list.page';
 
 /**
  * Position RBAC Tests
@@ -13,20 +14,15 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 test.describe('Position RBAC', () => {
   test('should not allow Manager to access positions create', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
-    await page.goto('/positions');
-    await page.waitForLoadState('networkidle');
+    const list = new PositionListPage(page);
+    await list.goto();
 
-    // Verify Create button is NOT visible
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
-    const hasCreateButton = await createButton.isVisible({ timeout: 2000 }).catch(() => false);
-
-    expect(hasCreateButton).toBe(false);
+    const canCreate = await list.hasCreatePermission();
+    expect(canCreate).toBe(false);
   });
 
   test('should not allow Manager to access positions page', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
 
     // Try to navigate to positions
@@ -38,7 +34,6 @@ test.describe('Position RBAC', () => {
     // 2. Redirect to home/dashboard
     // 3. Show access denied message
     // 4. Not show positions content
-
     const isForbidden = page.url().includes('403') || page.url().includes('forbidden');
     const isRedirected = !page.url().includes('positions');
     const accessDenied = await page.locator('text=/access.*denied|forbidden|unauthorized|no.*permission/i').isVisible({ timeout: 2000 }).catch(() => false);
@@ -48,20 +43,15 @@ test.describe('Position RBAC', () => {
   });
 
   test('should not allow Employee to access positions create', async ({ page }) => {
-    // Login as Employee
     await loginAsRole(page, 'employee');
-    await page.goto('/positions');
-    await page.waitForLoadState('networkidle');
+    const list = new PositionListPage(page);
+    await list.goto();
 
-    // Verify Create button is NOT visible
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
-    const hasCreateButton = await createButton.isVisible({ timeout: 2000 }).catch(() => false);
-
-    expect(hasCreateButton).toBe(false);
+    const canCreate = await list.hasCreatePermission();
+    expect(canCreate).toBe(false);
   });
 
   test('should not allow Employee to access positions page', async ({ page }) => {
-    // Login as Employee
     await loginAsRole(page, 'employee');
 
     // Try to navigate to positions
@@ -78,7 +68,6 @@ test.describe('Position RBAC', () => {
   });
 
   test('should redirect unauthorized direct URL access', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
 
     // Try to access position create page directly
@@ -94,7 +83,6 @@ test.describe('Position RBAC', () => {
   });
 
   test('should redirect unauthorized edit attempts', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
 
     // Try to access position edit page directly
@@ -110,7 +98,6 @@ test.describe('Position RBAC', () => {
   });
 
   test('should hide position menu item for non-HRAdmin users', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -124,7 +111,6 @@ test.describe('Position RBAC', () => {
   });
 
   test('should show position menu item for HRAdmin users', async ({ page }) => {
-    // Login as HRAdmin
     await loginAsRole(page, 'hradmin');
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -138,22 +124,16 @@ test.describe('Position RBAC', () => {
   });
 
   test('should not show edit/delete buttons to Manager on positions list', async ({ page }) => {
-    // Login as Manager
     await loginAsRole(page, 'manager');
-
-    // Try to navigate to positions (might be blocked)
-    await page.goto('/positions');
-    await page.waitForLoadState('networkidle');
+    const list = new PositionListPage(page);
+    await list.goto();
 
     // If we can see the list at all, verify no edit/delete buttons
-    const positionsTable = await page.locator('table, mat-table').isVisible({ timeout: 2000 }).catch(() => false);
+    const positionsTable = await list.table.isVisible({ timeout: 2000 }).catch(() => false);
 
     if (positionsTable) {
-      const editButtons = page.locator('button, a').filter({ hasText: /edit/i });
-      const deleteButtons = page.locator('button').filter({ hasText: /delete/i });
-
-      const hasEditButtons = await editButtons.first().isVisible({ timeout: 1000 }).catch(() => false);
-      const hasDeleteButtons = await deleteButtons.first().isVisible({ timeout: 1000 }).catch(() => false);
+      const hasEditButtons = await list.hasEditPermission();
+      const hasDeleteButtons = await list.hasDeletePermission();
 
       expect(hasEditButtons).toBe(false);
       expect(hasDeleteButtons).toBe(false);
@@ -164,33 +144,22 @@ test.describe('Position RBAC', () => {
   });
 
   test('should allow HRAdmin full access to positions', async ({ page }) => {
-    // Login as HRAdmin
     await loginAsRole(page, 'hradmin');
-    await page.goto('/positions');
-    await page.waitForLoadState('networkidle');
+    const list = new PositionListPage(page);
+    await list.goto();
 
-    // Verify full access
-    const pageTitle = page.locator('h1, h2, h3').filter({ hasText: /positions/i });
-    await expect(pageTitle.first()).toBeVisible({ timeout: 5000 });
-
-    // Verify CRUD buttons are available
-    const createButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
-    const hasCreateButton = await createButton.isVisible({ timeout: 2000 }).catch(() => false);
+    await expect(list.pageTitle.first()).toBeVisible({ timeout: 5000 });
 
     // HRAdmin should see create button
-    expect(hasCreateButton).toBe(true);
+    const canCreate = await list.hasCreatePermission();
+    expect(canCreate).toBe(true);
 
     // Check for edit/delete buttons (if positions exist)
-    const rows = page.locator('tr, mat-row');
-    const rowCount = await rows.count();
+    const rowCount = await list.getRowCount();
 
-    if (rowCount > 1) {
-      const firstRow = rows.nth(1);
-      const editButton = firstRow.locator('button, a').filter({ hasText: /edit/i });
-      const deleteButton = firstRow.locator('button').filter({ hasText: /delete/i });
-
-      const hasEditButton = await editButton.isVisible({ timeout: 2000 }).catch(() => false);
-      const hasDeleteButton = await deleteButton.isVisible({ timeout: 2000 }).catch(() => false);
+    if (rowCount > 0) {
+      const hasEditButton = await list.hasEditPermission();
+      const hasDeleteButton = await list.hasDeletePermission();
 
       // At least one action button should be visible
       expect(hasEditButton || hasDeleteButton).toBe(true);

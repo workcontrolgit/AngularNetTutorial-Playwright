@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { SalaryRangeListPage } from '../../page-objects/salary-range-list.page';
+import { SalaryRangeFormPage } from '../../page-objects/salary-range-form.page';
 
 /**
  * Salary Range Validation Tests
@@ -15,33 +17,27 @@ test.describe('Salary Range Validation', () => {
   test.beforeEach(async ({ page }) => {
     // Login as HRAdmin
     await loginAsRole(page, 'hradmin');
-    await page.goto('/salary-ranges');
-    await page.waitForLoadState('networkidle');
+    const list = new SalaryRangeListPage(page);
+    await list.goto();
   });
 
   test('should validate required min salary field', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Leave min salary empty, fill max salary
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-      await maxSalaryInput.fill('100000');
+      await form.fillMaxSalary(100000);
 
-      // Try to submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+      await form.submit();
 
-      await page.waitForTimeout(1000);
-
-      // Verify validation error
+      // Verify validation error or submit disabled
       const error = page.locator('.mat-error, .error, .invalid-feedback').filter({ hasText: /required|min/i });
       const hasError = await error.isVisible({ timeout: 2000 }).catch(() => false);
 
-      const submitDisabled = await submitButton.first().isDisabled().catch(() => false);
+      const submitDisabled = await form.isSubmitDisabled();
 
       expect(hasError || submitDisabled).toBe(true);
     } else {
@@ -50,28 +46,22 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should validate required max salary field', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Fill min salary, leave max empty
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      await minSalaryInput.fill('50000');
+      await form.fillMinSalary(50000);
 
-      // Try to submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+      await form.submit();
 
-      await page.waitForTimeout(1000);
-
-      // Verify validation error
+      // Verify validation error or submit disabled
       const error = page.locator('.mat-error, .error, .invalid-feedback').filter({ hasText: /required|max/i });
       const hasError = await error.isVisible({ timeout: 2000 }).catch(() => false);
 
-      const submitDisabled = await submitButton.first().isDisabled().catch(() => false);
+      const submitDisabled = await form.isSubmitDisabled();
 
       expect(hasError || submitDisabled).toBe(true);
     } else {
@@ -80,20 +70,16 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should validate min salary less than max salary', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Enter min > max (invalid)
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-
-      await minSalaryInput.fill('100000');
-      await maxSalaryInput.fill('50000');
-      await maxSalaryInput.blur();
+      await form.fillMinSalary(100000);
+      await form.fillMaxSalary(50000);
+      await form.maxSalaryInput.blur();
 
       await page.waitForTimeout(500);
 
@@ -101,9 +87,7 @@ test.describe('Salary Range Validation', () => {
       const error = page.locator('.mat-error, .error, .invalid-feedback').filter({ hasText: /greater|less|min|max|range/i });
       const hasError = await error.isVisible({ timeout: 2000 }).catch(() => false);
 
-      // Or submit is disabled
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      const submitDisabled = await submitButton.first().isDisabled().catch(() => false);
+      const submitDisabled = await form.isSubmitDisabled();
 
       expect(hasError || submitDisabled).toBe(true);
     } else {
@@ -112,22 +96,20 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should validate numeric input for salaries', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Try to enter non-numeric value
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      await minSalaryInput.fill('not-a-number');
-      await minSalaryInput.blur();
+      await form.fillMinSalary('not-a-number');
+      await form.minSalaryInput.blur();
 
       await page.waitForTimeout(500);
 
       // Field should auto-clear or show error
-      const value = await minSalaryInput.inputValue();
+      const value = await form.minSalaryInput.inputValue();
       const hasError = await page.locator('.mat-error, .error').filter({ hasText: /number|numeric|invalid/i }).isVisible({ timeout: 1000 }).catch(() => false);
 
       expect(value === '' || hasError).toBe(true);
@@ -137,17 +119,15 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should reject negative salary values', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Try to enter negative value
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      await minSalaryInput.fill('-5000');
-      await minSalaryInput.blur();
+      await form.fillMinSalary(-5000);
+      await form.minSalaryInput.blur();
 
       await page.waitForTimeout(500);
 
@@ -155,8 +135,7 @@ test.describe('Salary Range Validation', () => {
       const error = page.locator('.mat-error, .error').filter({ hasText: /positive|negative|greater|invalid/i });
       const hasError = await error.isVisible({ timeout: 2000 }).catch(() => false);
 
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      const submitDisabled = await submitButton.first().isDisabled().catch(() => false);
+      const submitDisabled = await form.isSubmitDisabled();
 
       expect(hasError || submitDisabled).toBe(true);
     } else {
@@ -165,20 +144,14 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should reject zero salary values', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-      // Try to enter zero
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-
-      await minSalaryInput.fill('0');
-      await maxSalaryInput.fill('50000');
-      await minSalaryInput.blur();
+      await form.fillForm({ minSalary: 0, maxSalary: 50000 });
+      await form.minSalaryInput.blur();
 
       await page.waitForTimeout(500);
 
@@ -186,8 +159,7 @@ test.describe('Salary Range Validation', () => {
       const error = page.locator('.mat-error, .error').filter({ hasText: /greater|positive|zero|invalid/i });
       const hasError = await error.isVisible({ timeout: 2000 }).catch(() => false);
 
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      const submitDisabled = await submitButton.first().isDisabled().catch(() => false);
+      const submitDisabled = await form.isSubmitDisabled();
 
       expect(hasError || submitDisabled).toBe(true);
     } else {
@@ -196,17 +168,15 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should validate currency format', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
       await page.waitForTimeout(1000);
 
       const currencyInput = page.locator('input[name*="currency"], input[formControlName="currency"], select[name*="currency"]');
 
       if (await currencyInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        // If it's a select, verify options exist
         const tagName = await currencyInput.evaluate(el => el.tagName.toLowerCase());
 
         if (tagName === 'select') {
@@ -214,7 +184,6 @@ test.describe('Salary Range Validation', () => {
           const optionCount = await options.count();
           expect(optionCount).toBeGreaterThan(0);
         } else {
-          // If text input, try entering valid currency code
           await currencyInput.fill('USD');
           const value = await currencyInput.inputValue();
           expect(value).toBe('USD');
@@ -229,10 +198,9 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should validate relationship with positions', async ({ page }) => {
-    // This test checks if salary range can be associated with positions
-    // Implementation depends on whether positions are linked during creation or separately
+    const list = new SalaryRangeListPage(page);
 
-    const firstRow = page.locator('tr, mat-row').nth(1);
+    const firstRow = list.getRow(0);
 
     if (await firstRow.isVisible({ timeout: 3000 })) {
       // Click to view/edit
@@ -260,23 +228,14 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should handle very large salary values', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-      // Enter very large salary
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-
-      await minSalaryInput.fill('10000000');
-      await maxSalaryInput.fill('99999999');
-
-      // Try to submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+      await form.fillForm({ minSalary: 10000000, maxSalary: 99999999 });
+      await form.submit();
 
       await page.waitForTimeout(2000);
 
@@ -294,26 +253,23 @@ test.describe('Salary Range Validation', () => {
   });
 
   test('should show clear validation messages', async ({ page }) => {
-    // Open create form
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
       // Leave fields empty and blur to trigger validation
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      await minSalaryInput.focus();
-      await minSalaryInput.blur();
+      await form.minSalaryInput.focus();
+      await form.minSalaryInput.blur();
 
       await page.waitForTimeout(500);
 
       // Check error message is user-friendly
-      const errorMessages = page.locator('.mat-error, .error, .invalid-feedback');
-      const count = await errorMessages.count();
+      const errorCount = await form.getValidationErrorCount();
 
-      if (count > 0) {
-        const firstError = await errorMessages.first().textContent();
+      if (errorCount > 0) {
+        const firstError = await form.validationErrors.first().textContent();
 
         // Error should exist and not be empty
         expect(firstError).toBeTruthy();

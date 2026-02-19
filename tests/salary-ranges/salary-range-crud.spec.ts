@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 import { createSalaryRangeData } from '../../fixtures/data.fixtures';
+import { SalaryRangeListPage } from '../../page-objects/salary-range-list.page';
+import { SalaryRangeFormPage } from '../../page-objects/salary-range-form.page';
 
 /**
  * Salary Range CRUD Tests
@@ -16,146 +18,98 @@ test.describe('Salary Range CRUD', () => {
   test.beforeEach(async ({ page }) => {
     // Login as HRAdmin (likely required for salary ranges)
     await loginAsRole(page, 'hradmin');
-    await page.goto('/salary-ranges');
-    await page.waitForLoadState('networkidle');
+    const list = new SalaryRangeListPage(page);
+    await list.goto();
   });
 
   test('should display salary range list', async ({ page }) => {
-    // Verify page title
-    const pageTitle = page.locator('h1, h2, h3').filter({ hasText: /salary.*range|range/i });
-    await expect(pageTitle.first()).toBeVisible({ timeout: 5000 });
+    const list = new SalaryRangeListPage(page);
 
-    // Verify table/list is visible
-    const salaryTable = page.locator('table, mat-table, .salary-ranges-list');
-    await expect(salaryTable.first()).toBeVisible({ timeout: 5000 });
+    await list.waitForLoad();
+    await expect(list.pageTitle.first()).toBeVisible({ timeout: 5000 });
 
-    // Verify at least header row exists
-    const rows = page.locator('tr, mat-row');
-    const rowCount = await rows.count();
+    const rowCount = await list.getRowCount();
     expect(rowCount).toBeGreaterThan(0);
   });
 
   test('should create new salary range', async ({ page }) => {
-    // Find and click create button
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-      // Fill salary range form
       const salaryData = createSalaryRangeData({
         minSalary: 50000,
         maxSalary: 80000,
         currency: 'USD',
       });
 
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-      const currencyInput = page.locator('input[name*="currency"], input[formControlName="currency"], select[name*="currency"]');
+      await form.fillForm({ minSalary: salaryData.minSalary, maxSalary: salaryData.maxSalary });
+      await form.submit();
 
-      await minSalaryInput.fill(salaryData.minSalary.toString());
-      await maxSalaryInput.fill(salaryData.maxSalary.toString());
-
-      if (await currencyInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await currencyInput.fill(salaryData.currency);
-      }
-
-      // Submit form
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
-
-      await page.waitForTimeout(2000);
-
-      // Verify success
-      const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created|saved/i });
-      const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
-
-      const wasRedirected = !page.url().includes('create') && !page.url().includes('new');
-
-      expect(hasSuccess || wasRedirected).toBe(true);
+      const result = await form.verifySubmissionSuccess();
+      expect(result.success).toBe(true);
     } else {
       test.skip();
     }
   });
 
   test('should edit existing salary range', async ({ page }) => {
-    // Find first salary range row
-    const firstRange = page.locator('tr, mat-row').nth(1);
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
+
+    const firstRange = list.getRow(0);
 
     if (await firstRange.isVisible({ timeout: 3000 })) {
-      // Click edit button
+      // Click edit button (or fall back to row click)
       const editButton = firstRange.locator('button, a').filter({ hasText: /edit|update/i }).first();
-
       if (await editButton.isVisible({ timeout: 2000 })) {
         await editButton.click();
+        await page.waitForTimeout(1000);
       } else {
-        // Try clicking the row itself
         await firstRange.click();
+        await page.waitForTimeout(1000);
       }
 
-      await page.waitForTimeout(2000);
-
-      // Update max salary
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-
-      if (await maxSalaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await maxSalaryInput.clear();
-        await maxSalaryInput.fill('100000');
+      if (await form.maxSalaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await form.fillMaxSalary(100000);
       }
 
-      // Submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
-      await submitButton.first().click();
+      await form.submit();
 
-      await page.waitForTimeout(2000);
-
-      // Verify success
-      const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|updated|saved/i });
-      const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
-
-      const wasRedirected = !page.url().includes('edit');
-
-      expect(hasSuccess || wasRedirected).toBe(true);
+      const result = await form.verifySubmissionSuccess();
+      expect(result.success).toBe(true);
     } else {
       test.skip();
     }
   });
 
   test('should delete salary range', async ({ page }) => {
+    const list = new SalaryRangeListPage(page);
+    const form = new SalaryRangeFormPage(page);
+
     // First create a test salary range to delete
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    if (await list.hasCreatePermission()) {
+      await list.clickCreate();
 
-    if (await createButton.isVisible({ timeout: 3000 })) {
-      await createButton.first().click();
-      await page.waitForTimeout(1000);
-
-      // Create salary range
       const salaryData = createSalaryRangeData({
         minSalary: 30000,
         maxSalary: 45000,
       });
 
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
-
-      await minSalaryInput.fill(salaryData.minSalary.toString());
-      await maxSalaryInput.fill(salaryData.maxSalary.toString());
-
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+      await form.fillForm({ minSalary: salaryData.minSalary, maxSalary: salaryData.maxSalary });
+      await form.submit();
 
       await page.waitForTimeout(2000);
 
       // Navigate back to list
-      await page.goto('/salary-ranges');
-      await page.waitForLoadState('networkidle');
+      await list.goto();
 
       // Find the salary range row (look for the max value)
-      const rangeRow = page.locator('tr, mat-row').filter({ hasText: /45000|45,000/i }).first();
+      const rangeRow = list.getRowByText('45000');
 
       if (await rangeRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-        // Click delete button
         const deleteButton = rangeRow.locator('button').filter({ hasText: /delete|remove/i }).first();
 
         if (await deleteButton.isVisible({ timeout: 2000 })) {
@@ -168,7 +122,6 @@ test.describe('Salary Range CRUD', () => {
 
           await page.waitForTimeout(2000);
 
-          // Verify success
           const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|deleted|removed/i });
           const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
 
@@ -185,28 +138,23 @@ test.describe('Salary Range CRUD', () => {
   });
 
   test('should search salary ranges', async ({ page }) => {
-    // Find search input
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
+    const list = new SalaryRangeListPage(page);
 
-    if (await searchInput.isVisible({ timeout: 2000 })) {
-      // Search for a salary value
-      await searchInput.fill('50000');
-      await page.waitForTimeout(1000);
+    if (await list.searchInput.isVisible({ timeout: 2000 })) {
+      await list.search('50000');
 
-      // Verify results are filtered
-      const rows = page.locator('tr, mat-row');
-      const count = await rows.count();
-
+      const rowCount = await list.getRowCount();
       // Either has results or shows empty state
-      expect(count).toBeGreaterThanOrEqual(1); // At least header row
+      expect(rowCount).toBeGreaterThanOrEqual(0);
     } else {
       test.skip();
     }
   });
 
   test('should display salary range in proper format', async ({ page }) => {
-    // Get first data row
-    const firstRow = page.locator('tr, mat-row').nth(1);
+    const list = new SalaryRangeListPage(page);
+
+    const firstRow = list.getRow(0);
 
     if (await firstRow.isVisible({ timeout: 3000 })) {
       const rowText = await firstRow.textContent();
@@ -223,12 +171,14 @@ test.describe('Salary Range CRUD', () => {
   });
 
   test('should sort salary ranges', async ({ page }) => {
+    const list = new SalaryRangeListPage(page);
+
     // Find sortable column headers
     const columnHeaders = page.locator('th, mat-header-cell').filter({ hasText: /min|max|salary/i });
 
     if (await columnHeaders.first().isVisible({ timeout: 2000 })) {
       // Get initial order
-      const firstRow = page.locator('tr, mat-row').nth(1);
+      const firstRow = list.getRow(0);
       const initialFirstValue = await firstRow.textContent();
 
       // Click to sort
@@ -236,11 +186,9 @@ test.describe('Salary Range CRUD', () => {
       await page.waitForTimeout(1000);
 
       // Get new order
-      const newFirstRow = page.locator('tr, mat-row').nth(1);
-      const newFirstValue = await newFirstRow.textContent();
+      const newFirstValue = await list.getRow(0).textContent();
 
-      // Values might have changed (sorted)
-      // This is a basic check - values exist
+      // Values might have changed (sorted) — basic check that values exist
       expect(initialFirstValue).toBeTruthy();
       expect(newFirstValue).toBeTruthy();
     } else {
@@ -249,19 +197,16 @@ test.describe('Salary Range CRUD', () => {
   });
 
   test('should not allow non-HRAdmin to create salary range', async ({ page }) => {
-    // Logout and login as Manager
-    await page.goto('/');
+    await logout(page);
     await loginAsRole(page, 'manager');
-    await page.goto('/salary-ranges');
-    await page.waitForLoadState('networkidle');
 
-    // Verify Create button is NOT visible or page is not accessible
-    const createButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
-    const hasCreateButton = await createButton.isVisible({ timeout: 2000 }).catch(() => false);
+    const list = new SalaryRangeListPage(page);
+    await list.goto();
 
+    const canCreate = await list.hasCreatePermission();
     const accessDenied = await page.locator('text=/access.*denied|forbidden|unauthorized/i').isVisible({ timeout: 2000 }).catch(() => false);
-    const noTable = !(await page.locator('table, mat-table').isVisible({ timeout: 2000 }).catch(() => true));
+    const noTable = !(await list.table.isVisible({ timeout: 2000 }).catch(() => true));
 
-    expect(!hasCreateButton || accessDenied || noTable).toBe(true);
+    expect(!canCreate || accessDenied || noTable).toBe(true);
   });
 });

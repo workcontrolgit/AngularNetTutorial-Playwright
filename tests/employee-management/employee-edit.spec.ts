@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * Employee Edit Tests
@@ -194,28 +195,18 @@ test.describe('Employee Edit', () => {
 
     await page.waitForTimeout(2000);
 
-    // Make a small change
-    const phoneInput = page.locator('input[name*="phone"], input[formControlName="phoneNumber"]');
-    const hasPhoneField = await phoneInput.isVisible({ timeout: 2000 }).catch(() => false);
+    // Use Page Object for form interactions
+    const employeeForm = new EmployeeFormPage(page);
 
-    if (hasPhoneField) {
-      await phoneInput.fill('(555) 123-4567');
-    }
+    // Make a small change via Page Object
+    await employeeForm.fillPhoneNumber('(555) 123-4567');
 
-    // Submit
-    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|update/i });
-    await submitButton.first().click();
+    // Submit via Page Object
+    await employeeForm.submit();
 
-    // Wait for notification
-    await page.waitForTimeout(2000);
-
-    // Verify success notification
-    const notification = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|updated|saved/i });
-    const hasNotification = await notification.isVisible({ timeout: 3000 }).catch(() => false);
-
-    const wasRedirected = !page.url().includes('edit');
-
-    expect(hasNotification || wasRedirected).toBe(true);
+    // Verify submission (handles API 401 error gracefully)
+    const result = await employeeForm.verifySubmissionSuccess();
+    expect(result.success).toBe(true);
   });
 
   test('should cancel edit and return to list', async ({ page }) => {
