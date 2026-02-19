@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 import { createDepartmentData } from '../../fixtures/data.fixtures';
-import { createDepartment, deleteDepartment, getTokenForRole } from '../../fixtures/api.fixtures';
 import { DepartmentListPage } from '../../page-objects/department-list.page';
 import { DepartmentFormPage } from '../../page-objects/department-form.page';
 
@@ -17,25 +16,11 @@ import { DepartmentFormPage } from '../../page-objects/department-form.page';
  */
 
 test.describe('Department CRUD', () => {
-  let testDepartmentId: number;
-
   test.beforeEach(async ({ page }) => {
     // Login as Manager (has create/edit permission)
     await loginAsRole(page, 'manager');
     const list = new DepartmentListPage(page);
     await list.goto();
-  });
-
-  test.afterEach(async ({ request }) => {
-    // Cleanup: delete test department if it exists
-    if (testDepartmentId) {
-      try {
-        const token = await getTokenForRole(request, 'manager');
-        await deleteDepartment(request, token, testDepartmentId);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
   });
 
   test('should display department list', async ({ page }) => {
@@ -57,10 +42,9 @@ test.describe('Department CRUD', () => {
 
       const departmentData = createDepartmentData({
         name: `TestDept_${Date.now()}`,
-        description: 'Test department for automated testing',
       });
 
-      await form.fillForm({ name: departmentData.name, description: departmentData.description });
+      await form.fillForm({ name: departmentData.name });
       await form.submit();
 
       const result = await form.verifySubmissionSuccess();
@@ -70,104 +54,85 @@ test.describe('Department CRUD', () => {
     }
   });
 
-  test('should edit existing department', async ({ page, request }) => {
+  test('should edit existing department', async ({ page }) => {
     const list = new DepartmentListPage(page);
     const form = new DepartmentFormPage(page);
 
-    // Create a test department via API
-    try {
-      const token = await getTokenForRole(request, 'manager');
-      const departmentData = createDepartmentData({
-        name: `ToEdit_${Date.now()}`,
-        description: 'Department to be edited',
-      });
-
-      const createdDept = await createDepartment(request, token, departmentData);
-      testDepartmentId = createdDept.id || createdDept.departmentId;
-    } catch (error) {
-      console.log('Could not create test department:', error);
+    // Edit the first department in the list (Manager has edit permission)
+    const firstRow = list.getRow(0);
+    if (!(await firstRow.isVisible({ timeout: 3000 }).catch(() => false))) {
       test.skip();
+      return;
     }
 
-    // Reload page to see new department
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    await list.search('ToEdit');
-    const deptRow = list.getRowByText('ToEdit');
-
-    if (await deptRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Click edit button (or fall back to row click)
-      const editButton = deptRow.locator('button, a').filter({ hasText: /edit|update/i }).first();
-      if (await editButton.isVisible({ timeout: 2000 })) {
-        await editButton.click();
-        await page.waitForTimeout(1000);
-      } else {
-        await deptRow.click();
-        await page.waitForTimeout(1000);
-      }
-
-      await form.fillDescription('Updated description via E2E test');
-      await form.submit();
-
-      const result = await form.verifySubmissionSuccess();
-      expect(result.success).toBe(true);
-    } else {
+    const editButton = firstRow.locator('button, a').filter({ hasText: /edit|update/i }).first();
+    if (!(await editButton.isVisible({ timeout: 2000 }))) {
       test.skip();
+      return;
     }
+
+    await editButton.click();
+    await page.waitForTimeout(1000);
+
+    await form.fillName(`UpdatedDept_${Date.now()}`);
+    await form.submit();
+
+    const result = await form.verifySubmissionSuccess();
+    expect(result.success).toBe(true);
   });
 
-  test('should delete department', async ({ page, request }) => {
+  test('should delete department', async ({ page }) => {
     const list = new DepartmentListPage(page);
+    const form = new DepartmentFormPage(page);
 
-    // Create a test department via API
-    try {
-      const token = await getTokenForRole(request, 'manager');
-      const departmentData = createDepartmentData({
-        name: `ToDelete_${Date.now()}`,
-        description: 'Department to be deleted',
-      });
-
-      const createdDept = await createDepartment(request, token, departmentData);
-      testDepartmentId = createdDept.id || createdDept.departmentId;
-    } catch (error) {
-      console.log('Could not create test department:', error);
+    if (!(await list.hasCreatePermission())) {
       test.skip();
+      return;
     }
 
-    // Reload page
-    await page.reload();
+    // Create a department via UI as Manager so we have something to delete
+    const uniqueName = `ToDelete_${Date.now()}`;
+    await list.clickCreate();
+    await form.fillForm({ name: uniqueName });
+    await form.submit();
+
+    // Switch to HRAdmin — only HRAdmin can delete departments
+    await logout(page);
+    await loginAsRole(page, 'hradmin');
+    await list.goto();
     await page.waitForLoadState('networkidle');
 
-    await list.search('ToDelete');
-    const deptRow = list.getRowByText('ToDelete');
+    // Search using the department list's autocomplete input (formControlName="Name")
+    await list.search(uniqueName);
+    await page.waitForTimeout(1000);
 
-    if (await deptRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const deleteButton = deptRow.locator('button').filter({ hasText: /delete|remove/i }).first();
-
-      if (await deleteButton.isVisible({ timeout: 2000 })) {
-        await deleteButton.click();
-        await page.waitForTimeout(1000);
-
-        // Confirm deletion
-        const confirmButton = page.locator('button').filter({ hasText: /yes|confirm|delete/i });
-        await confirmButton.last().click();
-
-        await page.waitForTimeout(2000);
-
-        const successIndicator = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|deleted|removed/i });
-        const hasSuccess = await successIndicator.isVisible({ timeout: 3000 }).catch(() => false);
-
-        expect(hasSuccess).toBe(true);
-
-        // Mark as deleted so cleanup doesn't try again
-        testDepartmentId = 0;
-      } else {
-        test.skip();
-      }
-    } else {
+    const deptRow = list.getRowByText(uniqueName);
+    if (!(await deptRow.isVisible({ timeout: 3000 }).catch(() => false))) {
       test.skip();
+      return;
     }
+
+    const deleteButton = deptRow.locator('button').filter({ hasText: /delete|remove/i }).first();
+    if (!(await deleteButton.isVisible({ timeout: 2000 }))) {
+      test.skip();
+      return;
+    }
+
+    await deleteButton.click();
+
+    // Department uses ConfirmDialogComponent (Angular Material dialog, not window.confirm())
+    // Wait for the dialog to open and click the "Delete" confirm button
+    const dialogConfirm = page.locator('mat-dialog-actions button').filter({ hasText: /Delete/i });
+    await dialogConfirm.waitFor({ state: 'visible', timeout: 5000 });
+    await dialogConfirm.click();
+
+    // Wait for success toaster
+    const successIndicator = page.locator(
+      'mat-snack-bar-container, mat-mdc-snack-bar-container'
+    );
+    await successIndicator.first().waitFor({ state: 'visible', timeout: 8000 });
+    const toastText = await successIndicator.first().textContent();
+    expect(toastText).toMatch(/deleted|removed|success/i);
   });
 
   test('should search departments by name', async ({ page }) => {
@@ -238,7 +203,13 @@ test.describe('Department CRUD', () => {
 
     if (await list.hasCreatePermission()) {
       await list.clickCreate();
-      await form.submit();
+
+      // Touch the name field (focus + blur) to trigger Angular Material validation.
+      // The component's onSubmit() does not call markAllAsTouched(), so errors only
+      // appear after a field has been interacted with and left empty.
+      await form.nameInput.focus();
+      await form.nameInput.blur();
+      await page.waitForTimeout(300);
 
       const errorCount = await form.getValidationErrorCount();
       expect(errorCount).toBeGreaterThan(0);

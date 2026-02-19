@@ -48,7 +48,7 @@ export class BaseFormPage {
     this.cancelButton = page.locator('button').filter({ hasText: /cancel|back|close/i }).first();
     this.resetButton = page.locator('button').filter({ hasText: /reset|clear/i }).first();
 
-    this.validationErrors = page.locator('.error, .mat-error, .invalid-feedback, [role="alert"]');
+    this.validationErrors = page.locator('mat-error, .mat-error, .mat-mdc-form-field-error, .error, .invalid-feedback, [role="alert"]');
 
     this.dialog = page.locator('mat-dialog, .modal, .dialog, [role="dialog"]');
     this.dialogTitle = page.locator('mat-dialog h2, .modal-title, .dialog-title, h1, h2').first();

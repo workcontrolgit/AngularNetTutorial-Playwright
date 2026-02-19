@@ -129,17 +129,21 @@ test.describe('Employee Delete', () => {
         await deleteButton.scrollIntoViewIfNeeded();
         await page.waitForTimeout(500);
 
-        // The app uses window.confirm() — register handler BEFORE click to accept it
-        page.once('dialog', dialog => dialog.accept());
+        await deleteButton.click({ force: true });
 
-        // Simultaneously click and wait for the DELETE HTTP response from the API
-        // Note: the DELETE endpoint returns 200 OK (not 201, which is for POST/create)
+        // Employee delete uses ConfirmDialogComponent (same as departments)
+        // Wait for the Material dialog and click its "Delete" confirm button
+        const dialogConfirm = page.locator('mat-dialog-actions button').filter({ hasText: /Delete/i });
+        await dialogConfirm.waitFor({ state: 'visible', timeout: 5000 });
+
+        // Simultaneously click confirm and capture the DELETE HTTP response
+        // The DELETE endpoint returns 200 OK
         const [deleteResponse] = await Promise.all([
           page.waitForResponse(
-            resp => resp.url().includes('/employees/') && resp.request().method() === 'DELETE',
+            resp => resp.url().toLowerCase().includes('/employees/') && resp.request().method() === 'DELETE',
             { timeout: 10000 }
           ),
-          deleteButton.click({ force: true }),
+          dialogConfirm.click(),
         ]);
 
         // Verify the DELETE API call succeeded with HTTP 200

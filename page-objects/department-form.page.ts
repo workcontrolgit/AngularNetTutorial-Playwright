@@ -9,15 +9,11 @@ import { BaseFormPage } from './base-form.page';
  */
 export class DepartmentFormPage extends BaseFormPage {
   readonly nameInput: Locator;
-  readonly descriptionInput: Locator;
 
   constructor(page: Page) {
     super(page, '/departments');
 
     this.nameInput = page.locator('input[formControlName="name"], input[name*="name"]');
-    this.descriptionInput = page.locator(
-      'textarea[formControlName="description"], textarea[name*="description"], input[formControlName="description"]'
-    );
   }
 
   protected async isFormStillFilled(): Promise<boolean> {
@@ -37,15 +33,9 @@ export class DepartmentFormPage extends BaseFormPage {
     }
   }
 
-  async fillDescription(description: string) {
-    const isVisible = await this.descriptionInput.isVisible({ timeout: 2000 }).catch(() => false);
-    if (isVisible) await this.descriptionInput.fill(description);
-  }
-
   // ── fillForm convenience method ─────────────────────────────────────────
 
-  async fillForm(data: { name: string; description?: string }) {
+  async fillForm(data: { name: string }) {
     await this.fillName(data.name);
-    if (data.description) await this.fillDescription(data.description);
   }
 }

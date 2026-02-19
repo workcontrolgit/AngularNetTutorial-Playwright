@@ -21,7 +21,6 @@ export interface EmployeeData {
 
 export interface DepartmentData {
   name?: string;
-  description?: string;
   location?: string;
   managerId?: number;
 }
@@ -126,7 +125,6 @@ export function createDepartmentData(overrides: DepartmentData = {}): Required<D
   const deptNumber = Math.floor(Math.random() * 1000);
   return {
     name: overrides.name || `Test Department ${deptNumber}`,
-    description: overrides.description || `Test department created for automated testing`,
     location: overrides.location || `Floor ${Math.floor(Math.random() * 10) + 1}`,
     managerId: overrides.managerId || 1,
   };
