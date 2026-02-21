@@ -47,7 +47,7 @@ test.describe('ARIA Labels', () => {
         // Should have either aria-label, aria-labelledby, or associated label
         const hasAccessibleName = ariaLabel || ariaLabelledBy || id;
 
-        expect(hasAccessibleName || true).toBe(true);
+        expect(hasAccessibleName).toBeTruthy();
       }
     }
   });
