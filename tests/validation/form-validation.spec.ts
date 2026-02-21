@@ -38,7 +38,7 @@ test.describe('Form Validation Edge Cases', () => {
 
     // Either truncated or validation error shown
     const actualValue = await firstNameInput.inputValue();
-    const hasError = await page.locator('.mat-error, .error').filter({ hasText: /length|max|characters/i }).isVisible({ timeout: 1000 }).catch(() => false);
+    const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /length|max|characters/i }).isVisible({ timeout: 1000 }).catch(() => false);
 
     expect(actualValue.length <= 150 || hasError).toBe(true);
   });
@@ -76,7 +76,7 @@ test.describe('Form Validation Edge Cases', () => {
       await page.waitForTimeout(500);
 
       // Check for validation errors
-      const hasError = await page.locator('.mat-error, .error').isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').isVisible({ timeout: 1000 }).catch(() => false);
 
       if (!testCase.valid) {
         expect(hasError).toBe(true);
@@ -111,7 +111,7 @@ test.describe('Form Validation Edge Cases', () => {
       await emailInput.blur();
       await page.waitForTimeout(500);
 
-      const hasError = await page.locator('.mat-error, .error').filter({ hasText: /email|valid|format/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /email|valid|format/i }).isVisible({ timeout: 1000 }).catch(() => false);
       expect(hasError).toBe(true);
     }
 
@@ -129,7 +129,7 @@ test.describe('Form Validation Edge Cases', () => {
       await emailInput.blur();
       await page.waitForTimeout(500);
 
-      const hasError = await page.locator('.mat-error, .error').filter({ hasText: /email|valid|format/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /email|valid|format/i }).isVisible({ timeout: 1000 }).catch(() => false);
       expect(hasError).toBe(false);
     }
   });
@@ -149,7 +149,7 @@ test.describe('Form Validation Edge Cases', () => {
       await salaryInput.blur();
       await page.waitForTimeout(500);
 
-      const hasError = await page.locator('.mat-error, .error').filter({ hasText: /positive|negative|greater|invalid/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /positive|negative|greater|invalid/i }).isVisible({ timeout: 1000 }).catch(() => false);
       const submitButton = page.locator('button[type="submit"]');
       const isDisabled = await submitButton.isDisabled().catch(() => false);
 
@@ -172,7 +172,7 @@ test.describe('Form Validation Edge Cases', () => {
       await salaryInput.blur();
       await page.waitForTimeout(500);
 
-      const hasError = await page.locator('.mat-error, .error').filter({ hasText: /greater|zero|positive/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /greater|zero|positive/i }).isVisible({ timeout: 1000 }).catch(() => false);
 
       expect(hasError || true).toBe(true);
     }
@@ -194,7 +194,7 @@ test.describe('Form Validation Edge Cases', () => {
       await salaryInput.blur();
       await page.waitForTimeout(500);
 
-      const hasError = await page.locator('.mat-error, .error').filter({ hasText: /max|large|limit/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /max|large|limit/i }).isVisible({ timeout: 1000 }).catch(() => false);
       const actualValue = await salaryInput.inputValue();
 
       // Either shows error or truncates/limits the value
@@ -233,7 +233,7 @@ test.describe('Form Validation Edge Cases', () => {
 
       // Should either reject or sanitize
       const actualValue = await firstNameInput.inputValue();
-      const hasError = await page.locator('.mat-error, .error').isVisible({ timeout: 1000 }).catch(() => false);
+      const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').isVisible({ timeout: 1000 }).catch(() => false);
 
       // Value should be sanitized or show error
       expect(actualValue !== injection || hasError).toBe(true);
@@ -301,7 +301,7 @@ test.describe('Form Validation Edge Cases', () => {
     await firstNameInput.blur();
     await page.waitForTimeout(500);
 
-    const hasError = await page.locator('.mat-error, .error').filter({ hasText: /required|empty|invalid/i }).isVisible({ timeout: 1000 }).catch(() => false);
+    const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').filter({ hasText: /required|empty|invalid/i }).isVisible({ timeout: 1000 }).catch(() => false);
     const submitButton = page.locator('button[type="submit"]');
     const isDisabled = await submitButton.isDisabled().catch(() => false);
 
@@ -330,7 +330,7 @@ test.describe('Form Validation Edge Cases', () => {
     await page.waitForTimeout(2000);
 
     // Should either trim automatically or show validation error
-    const hasError = await page.locator('.mat-error, .error').isVisible({ timeout: 1000 }).catch(() => false);
+    const hasError = await page.locator('mat-error, .mat-mdc-form-field-error, .mat-error').isVisible({ timeout: 1000 }).catch(() => false);
     const submitted = !page.url().includes('create');
 
     expect(!hasError || submitted).toBe(true);
@@ -358,7 +358,7 @@ test.describe('Form Validation Edge Cases', () => {
     await page.waitForTimeout(500);
 
     // Should show multiple errors
-    const errors = page.locator('.mat-error, .error');
+    const errors = page.locator('mat-error, .mat-mdc-form-field-error, .mat-error');
     const errorCount = await errors.count();
 
     expect(errorCount).toBeGreaterThanOrEqual(1);
