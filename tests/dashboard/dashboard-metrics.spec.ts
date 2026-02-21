@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
 
 /**
  * Dashboard Metrics Tests
@@ -34,10 +34,12 @@ test.describe('Dashboard Metrics', () => {
   });
 
   test('should display employee count metric', async ({ page }) => {
-    // Look for employee count metric card or widget
-    const employeeMetric = page.locator('mat-card, .metric, .stat, .widget').filter({ hasText: /employee|total.*employee/i });
+    // Look for employee count metric card - use more specific selector
+    const employeeMetric = page.locator('mat-card.metric-card, .metric, .stat, .widget').filter({ hasText: /total.*employee/i }).first();
 
-    if (await employeeMetric.isVisible({ timeout: 3000 })) {
+    const isVisible = await employeeMetric.isVisible({ timeout: 3000 }).catch(() => false);
+
+    if (isVisible) {
       // Verify it contains a number
       const metricText = await employeeMetric.textContent();
       expect(metricText).toMatch(/\d+/); // Contains at least one digit
@@ -54,10 +56,12 @@ test.describe('Dashboard Metrics', () => {
   });
 
   test('should display department count metric', async ({ page }) => {
-    // Look for department count metric card or widget
-    const departmentMetric = page.locator('mat-card, .metric, .stat, .widget').filter({ hasText: /department|total.*department/i });
+    // Look for department count metric card - use more specific selector
+    const departmentMetric = page.locator('mat-card.metric-card, .metric, .stat, .widget').filter({ hasText: /\d+.*department/i }).first();
 
-    if (await departmentMetric.isVisible({ timeout: 3000 })) {
+    const isVisible = await departmentMetric.isVisible({ timeout: 3000 }).catch(() => false);
+
+    if (isVisible) {
       // Verify it contains a number
       const metricText = await departmentMetric.textContent();
       expect(metricText).toMatch(/\d+/);
@@ -74,10 +78,12 @@ test.describe('Dashboard Metrics', () => {
   });
 
   test('should display position count metric', async ({ page }) => {
-    // Look for position count metric card or widget
-    const positionMetric = page.locator('mat-card, .metric, .stat, .widget').filter({ hasText: /position|total.*position/i });
+    // Look for position count metric card - use more specific selector
+    const positionMetric = page.locator('mat-card.metric-card, .metric, .stat, .widget').filter({ hasText: /\d+.*position/i }).first();
 
-    if (await positionMetric.isVisible({ timeout: 3000 })) {
+    const isVisible = await positionMetric.isVisible({ timeout: 3000 }).catch(() => false);
+
+    if (isVisible) {
       // Verify it contains a number
       const metricText = await positionMetric.textContent();
       expect(metricText).toMatch(/\d+/);
@@ -147,10 +153,12 @@ test.describe('Dashboard Metrics', () => {
   });
 
   test('should refresh metrics on page reload', async ({ page }) => {
-    // Get initial employee count
-    const employeeMetric = page.locator('mat-card, .metric, .stat, .widget').filter({ hasText: /employee/i });
+    // Get initial employee count - use first() to avoid strict mode violation
+    const employeeMetric = page.locator('mat-card.metric-card, .metric, .stat, .widget').filter({ hasText: /employee/i }).first();
 
-    if (await employeeMetric.isVisible({ timeout: 3000 })) {
+    const isVisible = await employeeMetric.isVisible({ timeout: 3000 }).catch(() => false);
+
+    if (isVisible) {
       const initialText = await employeeMetric.textContent();
 
       // Reload page
@@ -158,8 +166,8 @@ test.describe('Dashboard Metrics', () => {
       await page.waitForLoadState('networkidle');
 
       // Metrics should load again
-      const reloadedMetric = page.locator('mat-card, .metric, .stat, .widget').filter({ hasText: /employee/i });
-      await expect(reloadedMetric.first()).toBeVisible({ timeout: 5000 });
+      const reloadedMetric = page.locator('mat-card.metric-card, .metric, .stat, .widget').filter({ hasText: /employee/i }).first();
+      await expect(reloadedMetric).toBeVisible({ timeout: 5000 });
 
       const reloadedText = await reloadedMetric.textContent();
 
@@ -223,8 +231,8 @@ test.describe('Dashboard Metrics', () => {
   });
 
   test('should allow Employee role to view dashboard', async ({ page }) => {
-    // Logout and login as Employee
-    await page.goto('/');
+    // Logout current user and login as Employee
+    await logout(page);
     await loginAsRole(page, 'employee');
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
