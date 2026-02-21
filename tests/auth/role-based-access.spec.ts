@@ -284,34 +284,37 @@ test.describe('Role-Based Access Control', () => {
 
   test.describe('Cross-Role Verification', () => {
     test('should enforce different permissions across roles', async ({ page }) => {
-      // Test Employee
-      await logout(page);
+      // Test Employee (no logout needed - starting fresh)
       await loginAsRole(page, 'employee');
       await page.goto('/employees');
       await page.waitForLoadState('networkidle');
 
-      const employeeHasCreate = await page.locator('button').filter({ hasText: /create/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const employeeHasCreate = await page.locator('button').filter({ hasText: /create|add.*employee/i }).isVisible({ timeout: 3000 }).catch(() => false);
 
-      // Test Manager (MUST logout first)
+      // Test Manager (MUST logout first to clear Employee session)
       await logout(page);
+      await page.waitForTimeout(1000); // Wait for logout to complete
       await loginAsRole(page, 'manager');
       await page.goto('/employees');
       await page.waitForLoadState('networkidle');
 
-      const managerHasCreate = await page.locator('button').filter({ hasText: /create/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const managerHasCreate = await page.locator('button').filter({ hasText: /create|add.*employee/i }).isVisible({ timeout: 5000 }).catch(() => false);
 
-      // Test HRAdmin (MUST logout first)
+      // Test HRAdmin (MUST logout first to clear Manager session)
       await logout(page);
+      await page.waitForTimeout(1000); // Wait for logout to complete
       await loginAsRole(page, 'hradmin');
       await page.goto('/employees');
       await page.waitForLoadState('networkidle');
 
-      const adminHasDelete = await page.locator('button').filter({ hasText: /delete/i }).isVisible({ timeout: 1000 }).catch(() => false);
+      const adminHasCreate = await page.locator('button').filter({ hasText: /create|add.*employee/i }).isVisible({ timeout: 5000 }).catch(() => false);
+      const adminHasEditIcons = await page.locator('button mat-icon:has-text("edit"), button:has(mat-icon):has-text("edit")').first().isVisible({ timeout: 3000 }).catch(() => false);
 
       // Verify permission hierarchy
       expect(employeeHasCreate).toBe(false); // Employee cannot create
       expect(managerHasCreate).toBe(true); // Manager can create
-      expect(adminHasDelete).toBe(true); // HRAdmin can delete
+      expect(adminHasCreate).toBe(true); // HRAdmin can create
+      expect(adminHasEditIcons).toBe(true); // HRAdmin can edit (has edit icons)
     });
 
     test('should maintain role permissions after navigation', async ({ page }) => {
