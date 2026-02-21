@@ -32,7 +32,7 @@ Implement comprehensive automated testing for the AngularNetTutorial full-stack 
 ### Identity Server
 - **Technology:** Duende IdentityServer 7.0
 - **Location:** `C:\apps\AngularNetTutotial\TokenService\Duende-IdentityServer`
-- **URL:** `https://localhost:44310`
+- **URL:** `https://sts.skoruba.local`
 
 ---
 
