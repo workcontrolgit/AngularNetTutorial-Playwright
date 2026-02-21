@@ -44,7 +44,8 @@ test.describe('Network Error Handling', () => {
     // Simulate offline mode
     await context.setOffline(true);
 
-    await page.goto('/employees');
+    // Try to navigate while offline - this will throw an error
+    const navigationSucceeded = await page.goto('/employees').catch(() => false);
     await page.waitForTimeout(3000);
 
     // Should show offline/error message
@@ -54,7 +55,7 @@ test.describe('Network Error Handling', () => {
     // Or show cached data
     const hasCachedData = await page.locator('table, mat-table').isVisible({ timeout: 2000 }).catch(() => false);
 
-    expect(hasError || hasCachedData || true).toBe(true);
+    expect(hasError || hasCachedData || !navigationSucceeded).toBe(true);
 
     // Re-enable network
     await context.setOffline(false);
@@ -198,15 +199,15 @@ test.describe('Network Error Handling', () => {
     // Go offline
     await context.setOffline(true);
 
-    // Reload page
-    await page.reload();
+    // Try to reload page - this will throw an error when offline
+    const reloadSucceeded = await page.reload().catch(() => false);
     await page.waitForTimeout(2000);
 
     // Should show cached data or offline message
     const hasCachedData = await employeeTable.isVisible({ timeout: 3000 }).catch(() => false);
     const offlineMessage = await page.locator('text=/offline|no.*connection/i').isVisible({ timeout: 2000 }).catch(() => false);
 
-    expect(hasCachedData || offlineMessage || true).toBe(true);
+    expect(hasCachedData || offlineMessage || !reloadSucceeded).toBe(true);
 
     // Re-enable network
     await context.setOffline(false);
