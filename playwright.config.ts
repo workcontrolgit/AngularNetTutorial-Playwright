@@ -107,9 +107,16 @@ export default defineConfig({
     },
 
     // API Integration Tests (headless, faster)
+    // Note: auth-api, cache-api, departments-api, and employees-api tests require browser context, so they're excluded here
     {
       name: 'api',
       testMatch: /tests\/api\/.*\.spec\.ts/,
+      testIgnore: [
+        /tests\/api\/auth-api\.spec\.ts/,        // Excluded: requires browser login
+        /tests\/api\/cache-api\.spec\.ts/,       // Excluded: requires browser login for token
+        /tests\/api\/departments-api\.spec\.ts/, // Excluded: requires browser login for token
+        /tests\/api\/employees-api\.spec\.ts/,   // Excluded: requires browser login for token
+      ],
       use: {
         baseURL: 'https://localhost:44378/api/v1',
         extraHTTPHeaders: {
