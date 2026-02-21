@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * Keyboard Navigation Tests
@@ -58,12 +59,22 @@ test.describe('Keyboard Navigation', () => {
     await createButton.first().click();
     await page.waitForTimeout(1000);
 
-    // Fill required fields
-    await page.locator('input[name*="firstName"], input[formControlName="firstName"]').fill('KeyboardTest');
-    await page.locator('input[name*="lastName"], input[formControlName="lastName"]').fill('User');
-    await page.locator('input[name*="email"], input[formControlName="email"]').fill(`keyboard.${Date.now()}@example.com`);
+    // Use EmployeeFormPage to fill form with all required fields
+    const employeeForm = new EmployeeFormPage(page);
+    await employeeForm.fillForm({
+      firstName: 'KeyboardTest',
+      lastName: 'User',
+      email: `keyboard.${Date.now()}@example.com`,
+      employeeNumber: `EMP${Date.now()}`,
+      dateOfBirth: '01/01/1990',
+      phoneNumber: '555-1234',
+      salary: 50000,
+      position: 1,  // Select first position
+      department: 1, // Select first department
+    });
 
-    // Press Enter
+    // Focus on Create button and press Enter (keyboard accessibility)
+    await employeeForm.submitButton.focus();
     await page.keyboard.press('Enter');
     await page.waitForTimeout(2000);
 
