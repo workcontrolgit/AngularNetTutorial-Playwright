@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { createEmployeeData, createDepartmentData } from '../../fixtures/data.fixtures';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * Manager Daily Tasks Workflow Test
@@ -38,70 +39,37 @@ test.describe('Manager Daily Tasks Workflow', () => {
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThan(0);
 
-    // Step 3: Create new employee
+    // Step 3: Create new employee using Page Object
+    const employeeForm = new EmployeeFormPage(page);
+
     const createEmployeeButton = page.locator('button').filter({ hasText: /create|add.*employee|new/i });
     await createEmployeeButton.first().click();
     await page.waitForTimeout(1000);
 
-    // Fill employee form
+    // Generate employee data
     const newEmployeeData = createEmployeeData({
       firstName: 'ManagerTask',
       lastName: `New${Date.now()}`,
       email: `manager.task.${Date.now()}@example.com`,
     });
 
-    // Fill all form fields
-    await page.locator('input[name*="firstName"], input[formControlName="firstName"]').fill(newEmployeeData.firstName);
-    await page.locator('input[name*="lastName"], input[formControlName="lastName"]').fill(newEmployeeData.lastName);
-    await page.locator('input[name*="email"], input[formControlName="email"]').fill(newEmployeeData.email);
+    // Use Page Object to fill and submit form
+    await employeeForm.fillForm({
+      firstName: newEmployeeData.firstName,
+      lastName: newEmployeeData.lastName,
+      email: newEmployeeData.email,
+      phoneNumber: newEmployeeData.phoneNumber,
+      dateOfBirth: newEmployeeData.dateOfBirth,
+      salary: newEmployeeData.salary,
+      employeeNumber: newEmployeeData.employeeNumber,
+      department: 1,
+      position: 1,
+    });
 
-    // Fill required fields
-    const phoneNumber = page.getByPlaceholder(/phone/i).or(page.getByLabel(/phone/i)).or(page.locator('input[formControlName="phoneNumber"]'));
-    await phoneNumber.fill(newEmployeeData.phoneNumber);
+    await employeeForm.submit();
+    const result = await employeeForm.verifySubmissionSuccess();
 
-    const dateOfBirth = page.getByPlaceholder(/date.*birth/i).or(page.getByLabel(/date.*birth/i)).or(page.locator('input[formControlName="dateOfBirth"]'));
-    await dateOfBirth.fill(newEmployeeData.dateOfBirth);
-
-    // Fill salary field
-    const salaryInput = page.getByPlaceholder(/salary/i).or(page.getByLabel(/salary/i)).or(page.locator('input[formControlName="salary"]'));
-    if (await salaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await salaryInput.clear();
-      await salaryInput.fill(newEmployeeData.salary.toString());
-    }
-
-    // Select required Department
-    const departmentSelect = page.locator('mat-select[formControlName="departmentId"], select[name*="department"]');
-    if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await departmentSelect.click();
-      await page.waitForTimeout(500);
-      const firstDepartmentOption = page.locator('mat-option, option').first();
-      await firstDepartmentOption.click();
-      await page.waitForTimeout(300);
-    }
-
-    // Select required Position
-    const positionSelect = page.locator('mat-select[formControlName="positionId"], select[name*="position"]');
-    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await positionSelect.click();
-      await page.waitForTimeout(500);
-      const firstPositionOption = page.locator('mat-option, option').first();
-      await firstPositionOption.click();
-      await page.waitForTimeout(300);
-    }
-
-    // Submit
-    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-    await submitButton.first().click();
-
-    // Wait for navigation or success notification (increased timeout)
-    await page.waitForTimeout(5000);
-
-    // Verify creation - check notification OR that we navigated away
-    const successNotification = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
-    const hasSuccess = await successNotification.isVisible({ timeout: 5000 }).catch(() => false);
-    const leftCreatePage = !page.url().includes('create');
-
-    expect(hasSuccess || leftCreatePage).toBe(true);
+    expect(result.success).toBe(true);
 
     // Step 4: Update existing employee
     await page.goto('/employees');
