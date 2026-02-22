@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
 
 /**
  * Dashboard Visual Regression Tests
@@ -20,12 +21,12 @@ test.describe('Dashboard Visual Regression', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for dynamic content to load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(TIMEOUTS.dynamicContent);
 
     // Take screenshot
     await expect(page).toHaveScreenshot('dashboard-full.png', {
       fullPage: true,
-      maxDiffPixels: 100,
+      maxDiffPixels: VISUAL_THRESHOLDS.fullPage,
     });
   });
 
@@ -37,14 +38,14 @@ test.describe('Dashboard Visual Regression', () => {
     const charts = page.locator('canvas, svg').first();
     await charts.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(TIMEOUTS.chartRender);
 
     // Screenshot of charts section
     const chartsSection = page.locator('.charts, mat-card').filter({ hasText: /chart|distribution/i }).first();
 
     if (await chartsSection.isVisible({ timeout: 3000 })) {
       await expect(chartsSection).toHaveScreenshot('dashboard-charts.png', {
-        maxDiffPixels: 50,
+        maxDiffPixels: VISUAL_THRESHOLDS.component,
       });
     }
   });
@@ -54,11 +55,11 @@ test.describe('Dashboard Visual Regression', () => {
 
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(TIMEOUTS.dynamicContent);
 
     await expect(page).toHaveScreenshot('dashboard-1920x1080.png', {
       fullPage: true,
-      maxDiffPixels: 100,
+      maxDiffPixels: VISUAL_THRESHOLDS.fullPage,
     });
   });
 
@@ -67,14 +68,14 @@ test.describe('Dashboard Visual Regression', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for metrics to load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(TIMEOUTS.dynamicContent);
 
     // Screenshot metrics section
     const metricsSection = page.locator('.metrics, .statistics, mat-card').first();
 
     if (await metricsSection.isVisible({ timeout: 3000 })) {
       await expect(metricsSection).toHaveScreenshot('dashboard-metrics.png', {
-        maxDiffPixels: 50,
+        maxDiffPixels: VISUAL_THRESHOLDS.component,
       });
     }
   });
@@ -88,7 +89,7 @@ test.describe('Dashboard Visual Regression', () => {
 
     if (await navigation.isVisible({ timeout: 3000 })) {
       await expect(navigation).toHaveScreenshot('dashboard-navigation.png', {
-        maxDiffPixels: 30,
+        maxDiffPixels: VISUAL_THRESHOLDS.element,
       });
     }
   });

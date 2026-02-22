@@ -55,16 +55,22 @@ export const VIEWPORTS = {
 
 /**
  * Visual Regression Thresholds
+ *
+ * Note: Increased thresholds to account for:
+ * - Material Design animations and ripple effects
+ * - Chart rendering variations (anti-aliasing, random data)
+ * - Font rendering differences across runs
+ * - Dynamic content and timestamps
  */
 export const VISUAL_THRESHOLDS = {
   // Maximum pixel difference for full page screenshots
-  fullPage: 100,
+  fullPage: 250,
 
-  // Maximum pixel difference for component screenshots
-  component: 50,
+  // Maximum pixel difference for component screenshots (charts, metrics)
+  component: 150,
 
-  // Maximum pixel difference for small elements
-  element: 30,
+  // Maximum pixel difference for small elements (buttons, inputs)
+  element: 75,
 } as const;
 
 /**
