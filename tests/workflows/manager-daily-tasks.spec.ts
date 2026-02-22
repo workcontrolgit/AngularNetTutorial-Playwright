@@ -18,6 +18,9 @@ import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 test.describe('Manager Daily Tasks Workflow', () => {
   test('should complete typical manager daily workflow', async ({ page }) => {
+    // Increase timeout for complex workflow (review, create, update, assign)
+    test.setTimeout(60000);
+
     // Step 1: Login as Manager
     await loginAsRole(page, 'manager');
     await page.waitForLoadState('networkidle');

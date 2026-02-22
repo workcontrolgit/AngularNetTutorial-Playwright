@@ -23,6 +23,9 @@ test.describe('HRAdmin Operations Workflow', () => {
   let employeeId: number;
 
   test('should complete full HRAdmin workflow with relationships', async ({ page }) => {
+    // Increase timeout for complex workflow (creates salary range, position, and employee)
+    test.setTimeout(60000);
+
     // Step 1: Login as HRAdmin
     await loginAsRole(page, 'hradmin');
     await page.waitForLoadState('networkidle');

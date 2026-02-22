@@ -21,6 +21,9 @@ test.describe('Complete Employee Workflow', () => {
   let employeeId: number;
 
   test('should complete full employee lifecycle workflow', async ({ page }) => {
+    // Increase timeout for complex workflow (create, search, edit, verify)
+    test.setTimeout(60000);
+
     // Step 1: Login as Manager
     await loginAsRole(page, 'manager');
     await page.waitForLoadState('networkidle');
