@@ -208,17 +208,27 @@ test.describe('Large Datasets Performance', () => {
     // Get memory metrics
     const metrics = await page.evaluate(() => {
       if ('memory' in performance) {
-        return (performance as any).memory;
+        const mem = (performance as any).memory;
+        return {
+          usedJSHeapSize: mem?.usedJSHeapSize,
+          totalJSHeapSize: mem?.totalJSHeapSize,
+          jsHeapSizeLimit: mem?.jsHeapSizeLimit,
+        };
       }
       return null;
     });
 
-    if (metrics) {
+    if (metrics && typeof metrics.usedJSHeapSize === 'number') {
       console.log(`JS Heap Size: ${(metrics.usedJSHeapSize / 1048576).toFixed(2)} MB`);
-      console.log(`Total Heap Size: ${(metrics.totalJSHeapSize / 1048576).toFixed(2)} MB`);
+      console.log(`Total Heap Size: ${(metrics.totalJSHeapSize! / 1048576).toFixed(2)} MB`);
+      console.log(`Heap Size Limit: ${(metrics.jsHeapSizeLimit! / 1048576).toFixed(2)} MB`);
 
       // Memory usage should be reasonable (< 100MB for typical SPA)
       expect(metrics.usedJSHeapSize).toBeLessThan(100 * 1048576);
+    } else {
+      console.log('Memory API not available or not enabled. Skipping memory assertion.');
+      console.log('To enable: Run Chromium with --enable-precise-memory-info flag');
+      // Test passes but doesn't assert - memory API is optional
     }
   });
 });

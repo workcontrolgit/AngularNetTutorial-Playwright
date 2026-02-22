@@ -84,6 +84,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1366, height: 768 }, // Standard laptop resolution
+        launchOptions: {
+          args: ['--enable-precise-memory-info'], // Enable performance.memory API for memory tests
+        },
       },
       dependencies: ['setup'],
     },
