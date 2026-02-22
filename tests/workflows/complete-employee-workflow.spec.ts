@@ -43,18 +43,43 @@ test.describe('Complete Employee Workflow', () => {
       email: `workflow.test.${Date.now()}@example.com`,
     });
 
-    const firstNameInput = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
-    const lastNameInput = page.locator('input[name*="lastName"], input[formControlName="lastName"]');
-    const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
+    // Fill all form fields
+    await page.locator('input[name*="firstName"], input[formControlName="firstName"]').fill(employeeData.firstName);
+    await page.locator('input[name*="lastName"], input[formControlName="lastName"]').fill(employeeData.lastName);
+    await page.locator('input[name*="email"], input[formControlName="email"]').fill(employeeData.email);
 
-    await firstNameInput.fill(employeeData.firstName);
-    await lastNameInput.fill(employeeData.lastName);
-    await emailInput.fill(employeeData.email);
+    // Fill required phone number - try multiple selectors
+    const phoneNumber = page.getByPlaceholder(/phone/i).or(page.getByLabel(/phone/i)).or(page.locator('input[formControlName="phoneNumber"]'));
+    await phoneNumber.fill(employeeData.phoneNumber);
 
-    // Fill optional fields if visible
+    // Fill required date of birth - try multiple selectors
+    const dateOfBirth = page.getByPlaceholder(/date.*birth/i).or(page.getByLabel(/date.*birth/i)).or(page.locator('input[formControlName="dateOfBirth"]'));
+    await dateOfBirth.fill(employeeData.dateOfBirth);
+
+    // Fill optional employee number
     const employeeNumberInput = page.locator('input[name*="employeeNumber"], input[formControlName="employeeNumber"]');
     if (await employeeNumberInput.isVisible({ timeout: 2000 }).catch(() => false)) {
       await employeeNumberInput.fill(employeeData.employeeNumber);
+    }
+
+    // Select required Department (use first available option)
+    const departmentSelect = page.locator('mat-select[formControlName="departmentId"], select[name*="department"]');
+    if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await departmentSelect.click();
+      await page.waitForTimeout(500);
+      const firstDepartmentOption = page.locator('mat-option, option').first();
+      await firstDepartmentOption.click();
+      await page.waitForTimeout(300);
+    }
+
+    // Select required Position (use first available option)
+    const positionSelect = page.locator('mat-select[formControlName="positionId"], select[name*="position"]');
+    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await positionSelect.click();
+      await page.waitForTimeout(500);
+      const firstPositionOption = page.locator('mat-option, option').first();
+      await firstPositionOption.click();
+      await page.waitForTimeout(300);
     }
 
     // Submit form

@@ -50,13 +50,37 @@ test.describe('Manager Daily Tasks Workflow', () => {
       email: `manager.task.${Date.now()}@example.com`,
     });
 
-    const firstNameInput = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
-    const lastNameInput = page.locator('input[name*="lastName"], input[formControlName="lastName"]');
-    const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
+    // Fill all form fields
+    await page.locator('input[name*="firstName"], input[formControlName="firstName"]').fill(newEmployeeData.firstName);
+    await page.locator('input[name*="lastName"], input[formControlName="lastName"]').fill(newEmployeeData.lastName);
+    await page.locator('input[name*="email"], input[formControlName="email"]').fill(newEmployeeData.email);
 
-    await firstNameInput.fill(newEmployeeData.firstName);
-    await lastNameInput.fill(newEmployeeData.lastName);
-    await emailInput.fill(newEmployeeData.email);
+    // Fill required fields
+    const phoneNumber = page.getByPlaceholder(/phone/i).or(page.getByLabel(/phone/i)).or(page.locator('input[formControlName="phoneNumber"]'));
+    await phoneNumber.fill(newEmployeeData.phoneNumber);
+
+    const dateOfBirth = page.getByPlaceholder(/date.*birth/i).or(page.getByLabel(/date.*birth/i)).or(page.locator('input[formControlName="dateOfBirth"]'));
+    await dateOfBirth.fill(newEmployeeData.dateOfBirth);
+
+    // Select required Department
+    const departmentSelect = page.locator('mat-select[formControlName="departmentId"], select[name*="department"]');
+    if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await departmentSelect.click();
+      await page.waitForTimeout(500);
+      const firstDepartmentOption = page.locator('mat-option, option').first();
+      await firstDepartmentOption.click();
+      await page.waitForTimeout(300);
+    }
+
+    // Select required Position
+    const positionSelect = page.locator('mat-select[formControlName="positionId"], select[name*="position"]');
+    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await positionSelect.click();
+      await page.waitForTimeout(500);
+      const firstPositionOption = page.locator('mat-option, option').first();
+      await firstPositionOption.click();
+      await page.waitForTimeout(300);
+    }
 
     // Submit
     const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
