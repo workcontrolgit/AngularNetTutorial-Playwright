@@ -70,6 +70,9 @@ export default defineConfig({
 
     /* Ignore HTTPS errors (for self-signed certificates in development) */
     ignoreHTTPSErrors: true,
+
+    /* Disable animations for more stable visual tests */
+    actionTimeout: 10000,
   },
 
   /* Configure projects for major browsers and API testing */
@@ -86,7 +89,10 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         viewport: VIEWPORTS.laptop,
         launchOptions: {
-          args: ['--enable-precise-memory-info'], // Enable performance.memory API for memory tests
+          args: [
+            '--enable-precise-memory-info', // Enable performance.memory API for memory tests
+            '--disable-animations',         // Reduce visual test flakiness
+          ],
         },
       },
       dependencies: ['setup'],

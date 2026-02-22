@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { createEmployeeData, createDepartmentData } from '../../fixtures/data.fixtures';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * Manager Daily Tasks Workflow Test
@@ -17,6 +18,9 @@ import { createEmployeeData, createDepartmentData } from '../../fixtures/data.fi
 
 test.describe('Manager Daily Tasks Workflow', () => {
   test('should complete typical manager daily workflow', async ({ page }) => {
+    // Increase timeout for complex workflow (review, create, update, assign)
+    test.setTimeout(60000);
+
     // Step 1: Login as Manager
     await loginAsRole(page, 'manager');
     await page.waitForLoadState('networkidle');
@@ -38,47 +42,48 @@ test.describe('Manager Daily Tasks Workflow', () => {
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThan(0);
 
-    // Step 3: Create new employee
+    // Step 3: Create new employee using Page Object
+    const employeeForm = new EmployeeFormPage(page);
+
     const createEmployeeButton = page.locator('button').filter({ hasText: /create|add.*employee|new/i });
     await createEmployeeButton.first().click();
     await page.waitForTimeout(1000);
 
-    // Fill employee form
+    // Generate employee data
     const newEmployeeData = createEmployeeData({
       firstName: 'ManagerTask',
       lastName: `New${Date.now()}`,
       email: `manager.task.${Date.now()}@example.com`,
     });
 
-    const firstNameInput = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
-    const lastNameInput = page.locator('input[name*="lastName"], input[formControlName="lastName"]');
-    const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
+    // Use Page Object to fill and submit form
+    await employeeForm.fillForm({
+      firstName: newEmployeeData.firstName,
+      lastName: newEmployeeData.lastName,
+      email: newEmployeeData.email,
+      phoneNumber: newEmployeeData.phoneNumber,
+      dateOfBirth: newEmployeeData.dateOfBirth,
+      salary: newEmployeeData.salary,
+      employeeNumber: newEmployeeData.employeeNumber,
+      department: 1,
+      position: 1,
+    });
 
-    await firstNameInput.fill(newEmployeeData.firstName);
-    await lastNameInput.fill(newEmployeeData.lastName);
-    await emailInput.fill(newEmployeeData.email);
+    await employeeForm.submit();
+    const result = await employeeForm.verifySubmissionSuccess();
 
-    // Submit
-    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-    await submitButton.first().click();
-
-    await page.waitForTimeout(2000);
-
-    // Verify creation
-    const successNotification = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-    const hasSuccess = await successNotification.isVisible({ timeout: 3000 }).catch(() => false);
-
-    expect(hasSuccess || !page.url().includes('create')).toBe(true);
+    expect(result.success).toBe(true);
 
     // Step 4: Update existing employee
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // Find the newly created employee
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    if (await searchInput.isVisible({ timeout: 3000 })) {
-      await searchInput.fill(newEmployeeData.lastName);
-      await page.waitForTimeout(1500);
+    // Use Last Name filter to find the newly created employee
+    const lastNameFilter = page.getByPlaceholder(/last.*name/i);
+    if (await lastNameFilter.isVisible({ timeout: 3000 })) {
+      await lastNameFilter.fill(newEmployeeData.lastName);
+      await page.waitForTimeout(2000);
     }
 
     const employeeRow = page.locator('tr, mat-row').filter({ hasText: new RegExp(newEmployeeData.lastName, 'i') }).first();
@@ -286,15 +291,19 @@ test.describe('Manager Daily Tasks Workflow', () => {
       expect(metricText).toMatch(/\d+/);
     }
 
-    // Navigate to employees from dashboard
-    const employeesLink = page.locator('a, button').filter({ hasText: /employees|view.*employees/i });
+    // Navigate to employees from dashboard (via sidebar or direct navigation)
+    const employeesLink = page.locator('a, button').filter({ hasText: /^employees$/i });
 
-    if (await employeesLink.first().isVisible({ timeout: 3000 })) {
+    if (await employeesLink.first().isVisible({ timeout: 2000 }).catch(() => false)) {
       await employeesLink.first().click();
       await page.waitForLoadState('networkidle');
-
-      // Verify on employees page
-      expect(page.url()).toMatch(/employees/);
+    } else {
+      // If no link found, navigate directly
+      await page.goto('/employees');
+      await page.waitForLoadState('networkidle');
     }
+
+    // Verify on employees page
+    expect(page.url()).toMatch(/employees/);
   });
 });

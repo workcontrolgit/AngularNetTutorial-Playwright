@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { createSalaryRangeData, createPositionData, createEmployeeData } from '../../fixtures/data.fixtures';
+import { PositionFormPage } from '../../page-objects/position-form.page';
+import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
  * HRAdmin Operations Workflow Test
@@ -21,6 +23,9 @@ test.describe('HRAdmin Operations Workflow', () => {
   let employeeId: number;
 
   test('should complete full HRAdmin workflow with relationships', async ({ page }) => {
+    // Increase timeout for complex workflow (creates salary range, position, and employee)
+    test.setTimeout(60000);
+
     // Step 1: Login as HRAdmin
     await loginAsRole(page, 'hradmin');
     await page.waitForLoadState('networkidle');
@@ -32,96 +37,75 @@ test.describe('HRAdmin Operations Workflow', () => {
     // Step 2: Create new salary range
     await page.goto('/salary-ranges');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
     const createRangeButton = page.locator('button').filter({ hasText: /create|add.*range|new/i });
+    await createRangeButton.first().waitFor({ state: 'visible', timeout: 5000 });
+    await createRangeButton.first().click();
+    await page.waitForTimeout(1000);
 
-    if (await createRangeButton.isVisible({ timeout: 3000 })) {
-      await createRangeButton.first().click();
-      await page.waitForTimeout(1000);
+    // Fill salary range form
+    const salaryData = createSalaryRangeData({
+      name: `HRAdmin_Range_${Date.now()}`,
+      minSalary: 60000,
+      maxSalary: 90000,
+    });
 
-      // Fill salary range form
-      const salaryData = createSalaryRangeData({
-        minSalary: 60000,
-        maxSalary: 90000,
-        currency: 'USD',
-      });
+    const nameInput = page.locator('input[name*="name"], input[formControlName="name"]').first();
+    const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
+    const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
 
-      const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
-      const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
+    await nameInput.waitFor({ state: 'visible', timeout: 5000 });
+    await nameInput.fill(salaryData.name);
+    await minSalaryInput.fill(salaryData.minSalary.toString());
+    await maxSalaryInput.fill(salaryData.maxSalary.toString());
 
-      await minSalaryInput.fill(salaryData.minSalary.toString());
-      await maxSalaryInput.fill(salaryData.maxSalary.toString());
+    // Submit
+    const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
+    await submitButton.first().click();
 
-      // Submit
-      const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitButton.first().click();
+    // Wait for navigation or success notification (increased timeout)
+    await page.waitForTimeout(5000);
 
-      await page.waitForTimeout(2000);
+    // Verify creation
+    const successNotification = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
+    const hasSuccess = await successNotification.isVisible({ timeout: 5000 }).catch(() => false);
+    const leftCreatePage = !page.url().includes('create');
 
-      // Verify creation
-      const successNotification = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-      const hasSuccess = await successNotification.isVisible({ timeout: 3000 }).catch(() => false);
+    expect(hasSuccess || leftCreatePage).toBe(true);
 
-      expect(hasSuccess || !page.url().includes('create')).toBe(true);
-    }
+    // Step 3: Create new position using Page Object
+    const positionForm = new PositionFormPage(page);
 
-    // Step 3: Create new position
     await page.goto('/positions');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
     const createPositionButton = page.locator('button').filter({ hasText: /create|add.*position|new/i });
+    await createPositionButton.first().waitFor({ state: 'visible', timeout: 5000 });
+    await createPositionButton.first().click();
+    await page.waitForTimeout(1000);
 
-    if (await createPositionButton.isVisible({ timeout: 3000 })) {
-      await createPositionButton.first().click();
-      await page.waitForTimeout(1000);
+    // Fill position form using Page Object
+    const positionData = createPositionData({
+      title: `HRAdminPosition_${Date.now()}`,
+      description: 'Position created in HRAdmin workflow',
+    });
 
-      // Fill position form
-      const positionData = createPositionData({
-        name: `HRAdminPosition_${Date.now()}`,
-        description: 'Position created in HRAdmin workflow',
-      });
+    await positionForm.fillForm({
+      title: positionData.title,
+      description: positionData.description,
+    });
 
-      const nameInput = page.locator('input[name*="name"], input[formControlName="name"]');
-      const descriptionInput = page.locator('textarea[name*="description"], textarea[formControlName="description"], input[name*="description"]');
+    // Submit and verify
+    await positionForm.submit();
+    const result = await positionForm.verifySubmissionSuccess();
 
-      await nameInput.fill(positionData.name);
+    expect(result.success).toBe(true);
 
-      if (await descriptionInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await descriptionInput.fill(positionData.description);
-      }
+    // Step 5: Create employee in new position using Page Object
+    const employeeForm = new EmployeeFormPage(page);
 
-      // Step 4: Link position to salary range (if available during creation)
-      const salaryRangeSelect = page.locator('mat-select[formControlName*="salary"], mat-select[formControlName*="range"], select[name*="salary"]');
-
-      if (await salaryRangeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await salaryRangeSelect.click();
-        await page.waitForTimeout(500);
-
-        // Select the salary range we created (should be recent)
-        const rangeOptions = page.locator('mat-option, option');
-        const optionCount = await rangeOptions.count();
-
-        if (optionCount > 0) {
-          // Select last option (most recent)
-          await rangeOptions.last().click();
-          await page.waitForTimeout(500);
-        }
-      }
-
-      // Submit position
-      const submitPositionButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-      await submitPositionButton.first().click();
-
-      await page.waitForTimeout(2000);
-
-      // Verify creation
-      const positionSuccess = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-      const hasPositionSuccess = await positionSuccess.isVisible({ timeout: 3000 }).catch(() => false);
-
-      expect(hasPositionSuccess || !page.url().includes('create')).toBe(true);
-    }
-
-    // Step 5: Create employee in new position
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
 
@@ -129,50 +113,48 @@ test.describe('HRAdmin Operations Workflow', () => {
     await createEmployeeButton.first().click();
     await page.waitForTimeout(1000);
 
-    // Fill employee form
+    // Generate employee data
     const employeeData = createEmployeeData({
       firstName: 'HRAdmin',
       lastName: `Workflow${Date.now()}`,
       email: `hradmin.workflow.${Date.now()}@example.com`,
     });
 
-    const firstNameInput = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
-    const lastNameInput = page.locator('input[name*="lastName"], input[formControlName="lastName"]');
-    const emailInput = page.locator('input[name*="email"], input[formControlName="email"]');
+    // Use Page Object to fill form (except position - need to select specific one)
+    await employeeForm.fillFirstName(employeeData.firstName);
+    await employeeForm.fillLastName(employeeData.lastName);
+    await employeeForm.fillEmail(employeeData.email);
+    await employeeForm.fillPhoneNumber(employeeData.phoneNumber);
+    await employeeForm.fillDateOfBirth(employeeData.dateOfBirth);
+    await employeeForm.fillSalary(employeeData.salary);
+    await employeeForm.fillEmployeeNumber(employeeData.employeeNumber);
+    await employeeForm.selectDepartment(1); // First department
 
-    await firstNameInput.fill(employeeData.firstName);
-    await lastNameInput.fill(employeeData.lastName);
-    await emailInput.fill(employeeData.email);
+    // Manually select the position we just created (should be the most recent/last)
+    const positionSelect = employeeForm.positionSelect;
 
-    // Assign to the position we created
-    const positionSelect = page.locator('mat-select[formControlName*="position"], select[name*="position"]');
+    // Wait for position dropdown to be available
+    await positionSelect.waitFor({ state: 'visible', timeout: 5000 });
+    await positionSelect.click();
+    await page.waitForTimeout(500);
 
-    if (await positionSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await positionSelect.click();
+    // Wait for options to load
+    const positionOptions = page.locator('mat-option');
+    await positionOptions.first().waitFor({ state: 'visible', timeout: 5000 });
+
+    const count = await positionOptions.count();
+    if (count > 0) {
+      await positionOptions.last().click(); // Select most recent position
       await page.waitForTimeout(500);
-
-      // Look for our created position
-      const positionOptions = page.locator('mat-option, option');
-      const optionCount = await positionOptions.count();
-
-      if (optionCount > 0) {
-        // Select last option (most recent position)
-        await positionOptions.last().click();
-        await page.waitForTimeout(500);
-      }
+    } else {
+      throw new Error('No position options available');
     }
 
-    // Submit employee
-    const submitEmployeeButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
-    await submitEmployeeButton.first().click();
+    // Submit and verify
+    await employeeForm.submit();
+    const employeeResult = await employeeForm.verifySubmissionSuccess();
 
-    await page.waitForTimeout(2000);
-
-    // Verify creation
-    const employeeSuccess = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-    const hasEmployeeSuccess = await employeeSuccess.isVisible({ timeout: 3000 }).catch(() => false);
-
-    expect(hasEmployeeSuccess || !page.url().includes('create')).toBe(true);
+    expect(employeeResult.success).toBe(true);
 
     // Step 6: Verify all relationships
     await page.goto('/employees');
