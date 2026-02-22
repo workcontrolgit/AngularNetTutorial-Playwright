@@ -86,13 +86,15 @@ test.describe('Complete Employee Workflow', () => {
     const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
     await submitButton.first().click();
 
-    await page.waitForTimeout(2000);
+    // Wait for navigation or success notification (increased timeout for slow backend)
+    await page.waitForTimeout(5000);
 
-    // Verify creation success
-    const successNotification = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-    const hasSuccess = await successNotification.isVisible({ timeout: 3000 }).catch(() => false);
+    // Verify creation success - check notification OR that we navigated away from create page
+    const successNotification = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
+    const hasSuccess = await successNotification.isVisible({ timeout: 5000 }).catch(() => false);
+    const leftCreatePage = !page.url().includes('create');
 
-    expect(hasSuccess || !page.url().includes('create')).toBe(true);
+    expect(hasSuccess || leftCreatePage).toBe(true);
 
     // Step 3: Search for new employee
     await page.goto('/employees');

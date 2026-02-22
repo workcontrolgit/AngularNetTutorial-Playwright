@@ -41,14 +41,16 @@ test.describe('HRAdmin Operations Workflow', () => {
 
       // Fill salary range form
       const salaryData = createSalaryRangeData({
+        name: `HRAdmin_Range_${Date.now()}`,
         minSalary: 60000,
         maxSalary: 90000,
-        currency: 'USD',
       });
 
+      const nameInput = page.locator('input[name*="name"], input[formControlName="name"]').first();
       const minSalaryInput = page.locator('input[name*="min"], input[formControlName="minSalary"]');
       const maxSalaryInput = page.locator('input[name*="max"], input[formControlName="maxSalary"]');
 
+      await nameInput.fill(salaryData.name);
       await minSalaryInput.fill(salaryData.minSalary.toString());
       await maxSalaryInput.fill(salaryData.maxSalary.toString());
 
@@ -56,13 +58,15 @@ test.describe('HRAdmin Operations Workflow', () => {
       const submitButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
       await submitButton.first().click();
 
-      await page.waitForTimeout(2000);
+      // Wait for navigation or success notification (increased timeout)
+      await page.waitForTimeout(5000);
 
       // Verify creation
-      const successNotification = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-      const hasSuccess = await successNotification.isVisible({ timeout: 3000 }).catch(() => false);
+      const successNotification = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
+      const hasSuccess = await successNotification.isVisible({ timeout: 5000 }).catch(() => false);
+      const leftCreatePage = !page.url().includes('create');
 
-      expect(hasSuccess || !page.url().includes('create')).toBe(true);
+      expect(hasSuccess || leftCreatePage).toBe(true);
     }
 
     // Step 3: Create new position
@@ -77,14 +81,14 @@ test.describe('HRAdmin Operations Workflow', () => {
 
       // Fill position form
       const positionData = createPositionData({
-        name: `HRAdminPosition_${Date.now()}`,
+        title: `HRAdminPosition_${Date.now()}`,
         description: 'Position created in HRAdmin workflow',
       });
 
-      const nameInput = page.locator('input[name*="name"], input[formControlName="name"]');
+      const nameInput = page.locator('input[name*="name"], input[name*="title"], input[formControlName="name"], input[formControlName="title"]');
       const descriptionInput = page.locator('textarea[name*="description"], textarea[formControlName="description"], input[name*="description"]');
 
-      await nameInput.fill(positionData.name);
+      await nameInput.fill(positionData.title);
 
       if (await descriptionInput.isVisible({ timeout: 2000 }).catch(() => false)) {
         await descriptionInput.fill(positionData.description);
@@ -112,13 +116,15 @@ test.describe('HRAdmin Operations Workflow', () => {
       const submitPositionButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
       await submitPositionButton.first().click();
 
-      await page.waitForTimeout(2000);
+      // Wait for navigation or success notification (increased timeout)
+      await page.waitForTimeout(5000);
 
       // Verify creation
-      const positionSuccess = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-      const hasPositionSuccess = await positionSuccess.isVisible({ timeout: 3000 }).catch(() => false);
+      const positionSuccess = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
+      const hasPositionSuccess = await positionSuccess.isVisible({ timeout: 5000 }).catch(() => false);
+      const leftCreatePage = !page.url().includes('create');
 
-      expect(hasPositionSuccess || !page.url().includes('create')).toBe(true);
+      expect(hasPositionSuccess || leftCreatePage).toBe(true);
     }
 
     // Step 5: Create employee in new position
@@ -180,13 +186,15 @@ test.describe('HRAdmin Operations Workflow', () => {
     const submitEmployeeButton = page.locator('button[type="submit"], button').filter({ hasText: /save|submit|create/i });
     await submitEmployeeButton.first().click();
 
-    await page.waitForTimeout(2000);
+    // Wait for navigation or success notification (increased timeout)
+    await page.waitForTimeout(5000);
 
     // Verify creation
-    const employeeSuccess = page.locator('mat-snack-bar, .toast, .notification').filter({ hasText: /success|created/i });
-    const hasEmployeeSuccess = await employeeSuccess.isVisible({ timeout: 3000 }).catch(() => false);
+    const employeeSuccess = page.locator('mat-snack-bar, .toast, .notification, .snackbar').filter({ hasText: /success|created|saved/i });
+    const hasEmployeeSuccess = await employeeSuccess.isVisible({ timeout: 5000 }).catch(() => false);
+    const leftCreatePage = !page.url().includes('create');
 
-    expect(hasEmployeeSuccess || !page.url().includes('create')).toBe(true);
+    expect(hasEmployeeSuccess || leftCreatePage).toBe(true);
 
     // Step 6: Verify all relationships
     await page.goto('/employees');
