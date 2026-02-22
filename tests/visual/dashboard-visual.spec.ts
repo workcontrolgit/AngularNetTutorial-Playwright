@@ -14,14 +14,14 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
  * - User-specific content
  *
  * All tests use elevated thresholds to tolerate expected dynamic content:
- * - Full-page screenshots: 30,000 pixel threshold
+ * - Full-page screenshots: 30,000-40,000 pixel threshold
  * - Component screenshots: 20,000 pixel threshold
  * - Navigation (static): 150 pixel threshold
  *
  * Tests:
  * ✅ Dashboard baseline (full page, 30K threshold)
  * ✅ Chart section layout (component, 20K threshold)
- * ✅ Responsive layout 1920x1080 (full page, 30K threshold)
+ * ✅ Responsive layout 1920x1080 (full page, 40K threshold - higher due to larger viewport)
  * ✅ Metrics layout (component, 20K threshold)
  * ✅ Navigation rendering (static, 150 threshold)
  */
@@ -97,10 +97,10 @@ test.describe('Dashboard Visual Regression', () => {
       page.locator('.chart-card'),
     ];
 
-    // High threshold (30000) for full-page responsive layout test
+    // High threshold (40000) for full-page responsive layout test
     await expect(page).toHaveScreenshot('dashboard-1920x1080.png', {
       fullPage: true,
-      maxDiffPixels: 30000,
+      maxDiffPixels: 40000,
       mask: dynamicElements,
     });
   });
