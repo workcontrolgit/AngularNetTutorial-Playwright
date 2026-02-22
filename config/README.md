@@ -1,108 +1,77 @@
-# Configuration
+# Test Configuration
 
-Configuration files for test execution and environment settings.
+This directory contains centralized configuration files for the Playwright test suite.
 
-## Purpose
+## Files
 
-Configuration files provide:
-- Test user credentials for different roles
-- Environment-specific URLs (dev, staging, production)
-- API endpoint configurations
-- Test execution parameters
+### test-config.ts
 
-## Planned Files
+Central configuration for all test settings. Import from this file instead of hardcoding values.
 
-### `test-users.json`
+**Benefits:**
+- Single source of truth for all configuration
+- Easy to update settings across all tests
+- Better maintainability
+- Consistent values across test suites
 
-Test account credentials for all user roles:
+## Usage Examples
 
-```json
-{
-  "employee": {
-    "username": "employee1",
-    "password": "Pa$$word123",
-    "role": "Employee",
-    "permissions": ["read"]
-  },
-  "manager": {
-    "username": "ashtyn1",
-    "password": "Pa$$word123",
-    "role": "Manager",
-    "permissions": ["read", "write"]
-  },
-  "hradmin": {
-    "username": "admin1",
-    "password": "Pa$$word123",
-    "role": "HRAdmin",
-    "permissions": ["read", "write", "delete", "admin"]
-  }
-}
-```
-
-### `environments.json`
-
-Environment-specific URLs and configurations:
-
-```json
-{
-  "development": {
-    "angularUrl": "http://localhost:4200",
-    "apiUrl": "https://localhost:44378",
-    "identityServerUrl": "https://sts.skoruba.local",
-    "timeout": 30000
-  },
-  "staging": {
-    "angularUrl": "https://staging.example.com",
-    "apiUrl": "https://api-staging.example.com",
-    "identityServerUrl": "https://sts-staging.example.com",
-    "timeout": 60000
-  }
-}
-```
-
-### `api-endpoints.json`
-
-API endpoint definitions:
-
-```json
-{
-  "employees": {
-    "list": "/api/v1/employees",
-    "detail": "/api/v1/employees/{id}",
-    "create": "/api/v1/employees",
-    "update": "/api/v1/employees/{id}",
-    "delete": "/api/v1/employees/{id}"
-  },
-  "departments": {
-    "list": "/api/v1/departments",
-    "detail": "/api/v1/departments/{id}",
-    "create": "/api/v1/departments",
-    "update": "/api/v1/departments/{id}",
-    "delete": "/api/v1/departments/{id}"
-  }
-}
-```
-
-## Usage Example
+### Importing Configuration
 
 ```typescript
-import { test } from '@playwright/test';
-import testUsers from '../config/test-users.json';
-import environments from '../config/environments.json';
-
-const env = environments.development;
-const managerUser = testUsers.manager;
-
-test('Login as manager', async ({ page }) => {
-  await page.goto(env.angularUrl);
-  // Use managerUser.username and managerUser.password
-});
+import {
+  APP_URLS,
+  TIMEOUTS,
+  VIEWPORTS,
+  SELECTORS,
+  TEXT_PATTERNS,
+  VISUAL_THRESHOLDS,
+  PERFORMANCE,
+} from '../config/test-config';
 ```
 
-## Security Note
+### Using URLs
 
-⚠️ **Important:** Never commit real production credentials to this directory. Use environment variables or secrets management for production environments.
+```typescript
+// ❌ Before (hardcoded)
+await page.goto('http://localhost:4200/dashboard');
 
-## Status
+// ✅ After (centralized)
+import { APP_URLS, getUrl } from '../config/test-config';
+await page.goto(getUrl('/dashboard'));
+```
 
-⏳ **Not yet implemented** - See [IMPLEMENTATION_PLAN.md](../docs/IMPLEMENTATION_PLAN.md) Phase 1, Week 1
+### Using Timeouts
+
+```typescript
+// ❌ Before (hardcoded)
+await page.waitForTimeout(1000);
+
+// ✅ After (centralized)
+import { TIMEOUTS } from '../config/test-config';
+await page.waitForTimeout(TIMEOUTS.afterNavigation);
+```
+
+### Using Viewports
+
+```typescript
+// ❌ Before (hardcoded)
+await page.setViewportSize({ width: 375, height: 667 });
+
+// ✅ After (centralized)
+import { VIEWPORTS } from '../config/test-config';
+await page.setViewportSize(VIEWPORTS.mobile);
+```
+
+## Configuration Categories
+
+- **APP_URLS**: Application URLs
+- **TIMEOUTS**: Standard timeouts (30s, 5s, etc.)
+- **VIEWPORTS**: Mobile, tablet, laptop, desktop sizes
+- **VISUAL_THRESHOLDS**: Max pixel differences for visual tests
+- **SELECTORS**: Common CSS selectors
+- **TEXT_PATTERNS**: Regular expressions for text matching
+- **PERFORMANCE**: Performance thresholds
+- **FEATURES**: Feature flags
+
+See test-config.ts for complete documentation.

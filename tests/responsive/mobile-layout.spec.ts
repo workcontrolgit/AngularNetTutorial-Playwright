@@ -50,19 +50,31 @@ test.describe('Mobile/Responsive Layout', () => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
-    // Look for mobile menu toggle
-    const menuButton = page.locator('button[aria-label*="menu"], button mat-icon').filter({ hasText: /menu/i });
+    // Check if mobile menu/sidenav is visible (either already open or after toggling)
+    const menu = page.locator('mat-sidenav, .sidenav, nav, aside').first();
+    const menuVisible = await menu.isVisible({ timeout: 3000 }).catch(() => false);
 
-    if (await menuButton.isVisible({ timeout: 3000 })) {
-      await menuButton.first().click();
-      await page.waitForTimeout(500);
+    if (!menuVisible) {
+      // Menu not visible, look for toggle button
+      const menuButton = page.locator('button[aria-label*="menu"], button mat-icon').filter({ hasText: /menu/i });
 
-      // Menu should open
-      const menu = page.locator('mat-sidenav, .mobile-menu, nav');
-      const isMenuVisible = await menu.isVisible({ timeout: 2000 }).catch(() => false);
+      if (await menuButton.isVisible({ timeout: 2000 })) {
+        await menuButton.first().click();
+        await page.waitForTimeout(500);
 
-      expect(isMenuVisible).toBe(true);
+        // Verify menu opened
+        await expect(menu).toBeVisible({ timeout: 2000 });
+      }
+    } else {
+      // Menu is already visible (persistent on mobile)
+      console.log('Mobile menu is already visible (persistent layout)');
     }
+
+    // Verify menu navigation items are visible
+    const navItems = page.locator('mat-nav-list a, nav a, .nav-item');
+    const navCount = await navItems.count();
+
+    expect(navCount).toBeGreaterThan(0);
   });
 
   test('should handle table scrolling on mobile', async ({ page }) => {
@@ -234,14 +246,17 @@ test.describe('Mobile/Responsive Layout', () => {
       { width: 1920, height: 1080, name: 'Desktop' },
     ];
 
+    // Login once before testing all viewports
+    await loginAsRole(page, 'manager');
+    await page.goto('/employees');
+    await page.waitForLoadState('networkidle');
+
     for (const viewport of viewports) {
+      // Change viewport size
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.waitForTimeout(500); // Wait for layout to adjust
 
-      await loginAsRole(page, 'manager');
-      await page.goto('/employees');
-      await page.waitForLoadState('networkidle');
-
-      // Core functionality should work
+      // Core functionality should work at this viewport size
       const employeeTable = page.locator('table, mat-table');
       const hasTable = await employeeTable.isVisible({ timeout: 5000 }).catch(() => false);
 

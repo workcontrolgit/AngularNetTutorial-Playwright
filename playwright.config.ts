@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { APP_URLS, TIMEOUTS, VIEWPORTS } from './config/test-config';
 
 /**
  * Read environment variables from file.
@@ -23,11 +24,11 @@ export default defineConfig({
   testDir: './tests',
 
   /* Maximum time one test can run for */
-  timeout: 30 * 1000,
+  timeout: TIMEOUTS.standard,
 
   /* Test timeout assertions */
   expect: {
-    timeout: 5000
+    timeout: TIMEOUTS.short
   },
 
   /* Run tests in files in parallel */
@@ -53,7 +54,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL for Angular application */
-    baseURL: 'http://localhost:4200',
+    baseURL: APP_URLS.angular,
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
@@ -65,7 +66,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Standard viewport size for desktop testing */
-    viewport: { width: 1280, height: 720 },
+    viewport: VIEWPORTS.laptop,
 
     /* Ignore HTTPS errors (for self-signed certificates in development) */
     ignoreHTTPSErrors: true,
@@ -83,7 +84,10 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1366, height: 768 }, // Standard laptop resolution
+        viewport: VIEWPORTS.laptop,
+        launchOptions: {
+          args: ['--enable-precise-memory-info'], // Enable performance.memory API for memory tests
+        },
       },
       dependencies: ['setup'],
     },
@@ -92,7 +96,7 @@ export default defineConfig({
       name: 'firefox',
       use: {
         ...devices['Desktop Firefox'],
-        viewport: { width: 1366, height: 768 }, // Standard laptop resolution
+        viewport: VIEWPORTS.laptop,
       },
       dependencies: ['setup'],
     },
@@ -101,7 +105,7 @@ export default defineConfig({
       name: 'webkit',
       use: {
         ...devices['Desktop Safari'],
-        viewport: { width: 1366, height: 768 }, // Standard laptop resolution
+        viewport: VIEWPORTS.laptop,
       },
       dependencies: ['setup'],
     },
@@ -118,7 +122,7 @@ export default defineConfig({
         /tests\/api\/employees-api\.spec\.ts/,   // Excluded: requires browser login for token
       ],
       use: {
-        baseURL: 'https://localhost:44378/api/v1',
+        baseURL: APP_URLS.api,
         extraHTTPHeaders: {
           'Accept': 'application/json',
         },
