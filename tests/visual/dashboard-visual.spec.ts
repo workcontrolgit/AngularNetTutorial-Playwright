@@ -5,11 +5,10 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
 /**
  * Dashboard Visual Regression Tests
  *
- * NOTE: Most dashboard tests are skipped due to being too dynamic for stable testing.
- * Even with screenshot masking, dashboard content (metrics, charts, data) changes between
- * runs, causing test failures. Only the navigation test remains as it's static.
+ * NOTE: Dashboard baseline test uses high threshold (30,000 pixels) to accommodate
+ * dynamic content that changes between runs. Other dashboard tests remain skipped.
  *
- * Strategy (for skipped tests): Use screenshot masking to hide dynamic content.
+ * Strategy: Use screenshot masking + high threshold to hide/tolerate dynamic content.
  *
  * Dynamic areas masked:
  * - Metrics/statistics (numbers change between runs)
@@ -18,10 +17,10 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
  * - User-specific content
  *
  * Active tests:
- * - Navigation rendering (static content only)
+ * - Dashboard baseline (30K pixel threshold)
+ * - Navigation rendering (static content)
  *
- * Skipped tests (too dynamic):
- * - Full dashboard baseline
+ * Skipped tests (too dynamic even with masking):
  * - Chart section layout
  * - Responsive layout
  * - Metrics layout
@@ -32,7 +31,7 @@ test.describe('Dashboard Visual Regression', () => {
     await loginAsRole(page, 'manager');
   });
 
-  test.skip('should match dashboard baseline screenshot', async ({ page }) => {
+  test('should match dashboard baseline screenshot', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
@@ -48,9 +47,10 @@ test.describe('Dashboard Visual Regression', () => {
     ];
 
     // Take screenshot with masked dynamic content
+    // High threshold (30000) to accommodate dashboard's dynamic nature
     await expect(page).toHaveScreenshot('dashboard-full.png', {
       fullPage: true,
-      maxDiffPixels: VISUAL_THRESHOLDS.fullPage,
+      maxDiffPixels: 30000,
       mask: dynamicElements,
     });
   });
