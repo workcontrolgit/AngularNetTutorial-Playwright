@@ -85,8 +85,13 @@ test.describe('HRAdmin Operations Workflow', () => {
         description: 'Position created in HRAdmin workflow',
       });
 
-      const nameInput = page.locator('input[name*="name"], input[name*="title"], input[formControlName="name"], input[formControlName="title"]');
-      const descriptionInput = page.locator('textarea[name*="description"], textarea[formControlName="description"], input[name*="description"]');
+      // Use placeholder as fallback since form control names might vary
+      const nameInput = page.getByPlaceholder(/position.*title/i).or(
+        page.locator('input[name*="title"], input[formControlName="title"], input[formControlName="name"]')
+      );
+      const descriptionInput = page.getByPlaceholder(/position.*description/i).or(
+        page.locator('textarea[name*="description"], textarea[formControlName="description"]')
+      );
 
       await nameInput.fill(positionData.title);
 

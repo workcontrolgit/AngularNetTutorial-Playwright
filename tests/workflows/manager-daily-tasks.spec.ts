@@ -62,6 +62,13 @@ test.describe('Manager Daily Tasks Workflow', () => {
     const dateOfBirth = page.getByPlaceholder(/date.*birth/i).or(page.getByLabel(/date.*birth/i)).or(page.locator('input[formControlName="dateOfBirth"]'));
     await dateOfBirth.fill(newEmployeeData.dateOfBirth);
 
+    // Fill salary field
+    const salaryInput = page.getByPlaceholder(/salary/i).or(page.getByLabel(/salary/i)).or(page.locator('input[formControlName="salary"]'));
+    if (await salaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await salaryInput.clear();
+      await salaryInput.fill(newEmployeeData.salary.toString());
+    }
+
     // Select required Department
     const departmentSelect = page.locator('mat-select[formControlName="departmentId"], select[name*="department"]');
     if (await departmentSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -99,12 +106,13 @@ test.describe('Manager Daily Tasks Workflow', () => {
     // Step 4: Update existing employee
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // Find the newly created employee
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    if (await searchInput.isVisible({ timeout: 3000 })) {
-      await searchInput.fill(newEmployeeData.lastName);
-      await page.waitForTimeout(1500);
+    // Use Last Name filter to find the newly created employee
+    const lastNameFilter = page.getByPlaceholder(/last.*name/i);
+    if (await lastNameFilter.isVisible({ timeout: 3000 })) {
+      await lastNameFilter.fill(newEmployeeData.lastName);
+      await page.waitForTimeout(2000);
     }
 
     const employeeRow = page.locator('tr, mat-row').filter({ hasText: new RegExp(newEmployeeData.lastName, 'i') }).first();

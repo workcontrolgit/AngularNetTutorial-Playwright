@@ -56,6 +56,13 @@ test.describe('Complete Employee Workflow', () => {
     const dateOfBirth = page.getByPlaceholder(/date.*birth/i).or(page.getByLabel(/date.*birth/i)).or(page.locator('input[formControlName="dateOfBirth"]'));
     await dateOfBirth.fill(employeeData.dateOfBirth);
 
+    // Fill salary field if visible
+    const salaryInput = page.getByPlaceholder(/salary/i).or(page.getByLabel(/salary/i)).or(page.locator('input[formControlName="salary"]'));
+    if (await salaryInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await salaryInput.clear();
+      await salaryInput.fill(employeeData.salary.toString());
+    }
+
     // Fill optional employee number
     const employeeNumberInput = page.locator('input[name*="employeeNumber"], input[formControlName="employeeNumber"]');
     if (await employeeNumberInput.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -96,30 +103,40 @@ test.describe('Complete Employee Workflow', () => {
 
     expect(hasSuccess || leftCreatePage).toBe(true);
 
-    // Step 3: Search for new employee
+    // Step 3: Search for new employee using Last Name filter
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
-
-    const searchInput = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    if (await searchInput.isVisible({ timeout: 3000 })) {
-      await searchInput.fill(employeeData.lastName);
-      await page.waitForTimeout(1500);
-
-      // Verify employee appears in search results
-      const employeeRow = page.locator('tr, mat-row').filter({ hasText: new RegExp(employeeData.lastName, 'i') });
-      await expect(employeeRow.first()).toBeVisible({ timeout: 5000 });
-    }
-
-    // Step 4: View employee detail
-    const employeeRow = page.locator('tr, mat-row').filter({ hasText: new RegExp(employeeData.lastName, 'i') }).first();
-    await employeeRow.click();
     await page.waitForTimeout(2000);
 
-    // Verify we're on detail/edit page or dialog opened
-    const isDetailPage = page.url().includes('employee') || page.url().includes('detail') || page.url().includes('edit');
+    // Use the Last Name filter field - look for input with "Last Name" label nearby
+    const filterInputs = page.locator('.mat-mdc-form-field, .mdc-text-field').filter({ hasText: /last.*name/i }).locator('input');
+    const lastNameByPlaceholder = page.getByPlaceholder(/last.*name/i);
+    const lastNameByLabel = page.getByLabel(/last.*name/i);
+
+    // Try multiple approaches to find the Last Name filter
+    const filterInput = lastNameByLabel.or(lastNameByPlaceholder).or(filterInputs.first());
+
+    await filterInput.fill(employeeData.lastName);
+    await page.waitForTimeout(2000); // Wait for filter to apply
+
+    // Verify employee appears in filtered results
+    const employeeRow = page.locator('tr, mat-row').filter({ hasText: new RegExp(employeeData.lastName, 'i') });
+    await expect(employeeRow.first()).toBeVisible({ timeout: 5000 });
+
+    // Step 4: Click edit button to edit employee
+    const editButton = employeeRow.first().locator('button, a').filter({ has: page.locator('mat-icon:has-text("edit"), mat-icon:has-text("mode_edit")') });
+    const editIconButton = employeeRow.first().locator('[aria-label*="edit" i], [title*="edit" i]');
+
+    // Try to find and click edit button
+    const editAction = editButton.or(editIconButton);
+    await editAction.first().click();
+    await page.waitForTimeout(2000);
+
+    // Verify we're on edit page or dialog opened
+    const isEditPage = page.url().includes('edit') || page.url().includes('employee');
     const isDialogOpen = await page.locator('mat-dialog, .modal, [role="dialog"]').isVisible({ timeout: 2000 }).catch(() => false);
 
-    expect(isDetailPage || isDialogOpen).toBe(true);
+    expect(isEditPage || isDialogOpen).toBe(true);
 
     // Verify employee details are correct
     const nameField = page.locator('input[name*="firstName"], input[formControlName="firstName"]');
@@ -152,19 +169,20 @@ test.describe('Complete Employee Workflow', () => {
     // Step 6: Verify changes reflected in list
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // Search for updated employee
-    const searchInput2 = page.locator('input[placeholder*="Search"], input[name*="search"]');
-    if (await searchInput2.isVisible({ timeout: 3000 })) {
-      await searchInput2.fill(employeeData.lastName);
-      await page.waitForTimeout(1500);
+    // Use Last Name filter to find updated employee
+    const filterInputs2 = page.locator('.mat-mdc-form-field, .mdc-text-field').filter({ hasText: /last.*name/i }).locator('input');
+    const lastNameFilter2 = page.getByLabel(/last.*name/i).or(page.getByPlaceholder(/last.*name/i)).or(filterInputs2.first());
+
+    if (await lastNameFilter2.isVisible({ timeout: 3000 })) {
+      await lastNameFilter2.fill(employeeData.lastName);
+      await page.waitForTimeout(2000);
     }
 
     // Verify updated name appears
     const updatedRow = page.locator('tr, mat-row').filter({ hasText: /UpdatedWorkflow/i });
-    const isUpdatedVisible = await updatedRow.isVisible({ timeout: 3000 }).catch(() => false);
-
-    expect(isUpdatedVisible).toBe(true);
+    await expect(updatedRow.first()).toBeVisible({ timeout: 5000 });
 
     // Step 7: Logout
     const userMenu = page.locator('button, a').filter({ hasText: /logout|sign.*out|profile|account/i });
