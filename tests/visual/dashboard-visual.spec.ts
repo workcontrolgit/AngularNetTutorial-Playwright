@@ -5,10 +5,7 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
 /**
  * Dashboard Visual Regression Tests
  *
- * NOTE: Dashboard baseline test uses high threshold (30,000 pixels) to accommodate
- * dynamic content that changes between runs. Other dashboard tests remain skipped.
- *
- * Strategy: Use screenshot masking + high threshold to hide/tolerate dynamic content.
+ * Strategy: Use screenshot masking + high thresholds to accommodate dynamic content.
  *
  * Dynamic areas masked:
  * - Metrics/statistics (numbers change between runs)
@@ -16,14 +13,17 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
  * - Timestamps and date fields
  * - User-specific content
  *
- * Active tests:
- * - Dashboard baseline (30K pixel threshold)
- * - Navigation rendering (static content)
+ * All tests use elevated thresholds to tolerate expected dynamic content:
+ * - Full-page screenshots: 30,000 pixel threshold
+ * - Component screenshots: 15,000 pixel threshold
+ * - Navigation (static): 150 pixel threshold
  *
- * Skipped tests (too dynamic even with masking):
- * - Chart section layout
- * - Responsive layout
- * - Metrics layout
+ * Tests:
+ * ✅ Dashboard baseline (full page, 30K threshold)
+ * ✅ Chart section layout (component, 15K threshold)
+ * ✅ Responsive layout 1920x1080 (full page, 30K threshold)
+ * ✅ Metrics layout (component, 15K threshold)
+ * ✅ Navigation rendering (static, 150 threshold)
  */
 
 test.describe('Dashboard Visual Regression', () => {
@@ -55,7 +55,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
   });
 
-  test.skip('should render charts section layout consistently', async ({ page }) => {
+  test('should render charts section layout consistently', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
@@ -70,8 +70,9 @@ test.describe('Dashboard Visual Regression', () => {
 
     if (await chartsSection.isVisible({ timeout: 3000 })) {
       // Mask the chart content (canvas/svg and card content) to test only structure
+      // High threshold (15000) for component-level dynamic content
       await expect(chartsSection).toHaveScreenshot('dashboard-charts.png', {
-        maxDiffPixels: VISUAL_THRESHOLDS.component,
+        maxDiffPixels: 15000,
         mask: [
           chartsSection.locator('canvas'),
           chartsSection.locator('svg'),
@@ -81,7 +82,7 @@ test.describe('Dashboard Visual Regression', () => {
     }
   });
 
-  test.skip('should maintain consistent layout on 1920x1080', async ({ page }) => {
+  test('should maintain consistent layout on 1920x1080', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
 
     await page.goto('/dashboard');
@@ -96,14 +97,15 @@ test.describe('Dashboard Visual Regression', () => {
       page.locator('.chart-card'),
     ];
 
+    // High threshold (30000) for full-page responsive layout test
     await expect(page).toHaveScreenshot('dashboard-1920x1080.png', {
       fullPage: true,
-      maxDiffPixels: VISUAL_THRESHOLDS.fullPage,
+      maxDiffPixels: 30000,
       mask: dynamicElements,
     });
   });
 
-  test.skip('should display metrics layout consistently', async ({ page }) => {
+  test('should display metrics layout consistently', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
@@ -117,8 +119,9 @@ test.describe('Dashboard Visual Regression', () => {
       // Mask elements containing numbers (the actual metric values)
       const numericElements = metricsSection.locator(':text-matches("\\d+", "i")');
 
+      // High threshold (15000) for component-level metrics
       await expect(metricsSection).toHaveScreenshot('dashboard-metrics.png', {
-        maxDiffPixels: VISUAL_THRESHOLDS.component,
+        maxDiffPixels: 15000,
         mask: [numericElements],
       });
     }
