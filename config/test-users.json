@@ -1,0 +1,40 @@
+{
+  "employee": {
+    "username": "antoinette16",
+    "password": "Pa$$word123",
+    "email": "antoinette16@ethereal.email",
+    "role": "Employee",
+    "roles": ["Employee"],
+    "permissions": ["read"],
+    "description": "Read-only access to all modules",
+    "canCreate": false,
+    "canEdit": false,
+    "canDelete": false
+  },
+  "manager": {
+    "username": "rosamond33",
+    "password": "Pa$$word123",
+    "email": "rosamond33@ethereal.email",
+    "role": "Manager",
+    "roles": ["Employee", "Manager"],
+    "permissions": ["read", "write"],
+    "description": "Can create and edit employees and departments",
+    "canCreate": true,
+    "canEdit": true,
+    "canDelete": false,
+    "restrictedModules": ["positions", "salaryRanges"]
+  },
+  "hradmin": {
+    "username": "ashtyn1",
+    "password": "Pa$$word123",
+    "email": "ashtyn1@ethereal.email",
+    "role": "HRAdmin",
+    "roles": ["Employee", "Manager", "HRAdmin"],
+    "permissions": ["read", "write", "delete", "admin"],
+    "description": "Full administrative access to all modules",
+    "canCreate": true,
+    "canEdit": true,
+    "canDelete": true,
+    "restrictedModules": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "development": {
+    "angularUrl": "http://localhost:4200",
+    "apiUrl": "https://localhost:44378",
+    "apiBaseUrl": "https://localhost:44378/api/v1",
+    "identityServerUrl": "https://sts.skoruba.local",
+    "timeout": 30000,
+    "description": "Local development environment"
+  },
+  "staging": {
+    "angularUrl": "https://staging-app.example.com",
+    "apiUrl": "https://staging-api.example.com",
+    "apiBaseUrl": "https://staging-api.example.com/api/v1",
+    "identityServerUrl": "https://staging-sts.example.com",
+    "timeout": 60000,
+    "description": "Staging environment for testing"
+  },
+  "production": {
+    "angularUrl": "https://app.example.com",
+    "apiUrl": "https://api.example.com",
+    "apiBaseUrl": "https://api.example.com/api/v1",
+    "identityServerUrl": "https://sts.example.com",
+    "timeout": 45000,
+    "description": "Production environment (use with caution)"
+  }
+}

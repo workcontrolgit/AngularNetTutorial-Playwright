@@ -11,7 +11,7 @@ Before you begin, ensure you have:
 - [ ] Visual Studio Code (recommended)
 - [ ] Angular app running at `http://localhost:4200`
 - [ ] .NET API running at `https://localhost:44378`
-- [ ] IdentityServer running at `https://localhost:44310`
+- [ ] IdentityServer running at `https://sts.skoruba.local`
 
 ---
 
