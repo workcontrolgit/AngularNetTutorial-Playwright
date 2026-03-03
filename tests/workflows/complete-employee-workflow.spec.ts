@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout, isAuthenticated } from '../../fixtures/auth.fixtures';
 import { createEmployeeData } from '../../fixtures/data.fixtures';
 import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
@@ -149,23 +149,15 @@ test.describe('Complete Employee Workflow', () => {
 
     expect(!hasOldName || hasUpdatedRow).toBe(true);
 
-    // Step 7: Logout
-    const userMenu = page.locator('button, a').filter({ hasText: /logout|sign.*out|profile|account/i });
+    // Step 7: Logout using proper logout fixture
+    await logout(page);
 
-    if (await userMenu.first().isVisible({ timeout: 3000 })) {
-      await userMenu.first().click();
-      await page.waitForTimeout(500);
+    // After logout, should be back on Angular app as Guest/Anonymous
+    expect(page.url()).toMatch(/localhost:4200/);
 
-      const logoutButton = page.locator('button, a').filter({ hasText: /logout|sign.*out/i });
-      if (await logoutButton.last().isVisible({ timeout: 2000 })) {
-        await logoutButton.last().click();
-        await page.waitForTimeout(2000);
-
-        // Verify logged out (redirected to login)
-        const isLoggedOut = page.url().includes('login') || page.url().includes('sts.skoruba.local');
-        expect(isLoggedOut).toBe(true);
-      }
-    }
+    // Verify user is no longer authenticated
+    const authenticated = await isAuthenticated(page);
+    expect(authenticated).toBe(false);
   });
 
   test('should handle workflow interruption gracefully', async ({ page }) => {

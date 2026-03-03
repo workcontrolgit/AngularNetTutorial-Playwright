@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, loginAsRole, isAuthenticated, getStoredToken } from '../../fixtures/auth.fixtures';
+import { loginAs, loginAsRole, isAuthenticated, getStoredToken, clearAuthTokens, logout } from '../../fixtures/auth.fixtures';
 
 /**
  * Authentication Tests - Login Flow
@@ -13,7 +13,12 @@ import { loginAs, loginAsRole, isAuthenticated, getStoredToken } from '../../fix
 
 test.describe('Login Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Start from the Angular app
+    // ensure we start in a clean, anonymous state
+    await page.goto('/');
+    // clear any tokens that might persist between tests
+    await clearAuthTokens(page);
+    // if somehow still authenticated, log out (ignore errors)
+    await logout(page).catch(() => {});
     await page.goto('/');
   });
 
@@ -22,18 +27,30 @@ test.describe('Login Flow', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Click user menu and then Login
-    const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
+    // open user menu (reuse same selector logic as helper)
+    const userIcon = page.locator(
+      'button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)'
+    ).last();
+    await userIcon.waitFor({ state: 'visible', timeout: 10000 });
     await userIcon.click();
     await page.waitForTimeout(500);
 
-    const loginOption = page.locator('button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")').first();
+    // ensure login option is present before clicking
+    const loginOption = page.locator(
+      'button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")'
+    ).first();
+    const count = await loginOption.count();
+    expect(count).toBeGreaterThan(0);
+    await loginOption.waitFor({ state: 'visible', timeout: 5000 });
     await loginOption.click();
 
-    // Should redirect to IdentityServer
-    await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
+    // Should redirect to IdentityServer or show login form
+    await Promise.race([
+      page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 15000 }),
+      page.waitForSelector('input[name="Username"]', { timeout: 15000 })
+    ]);
 
-    // Verify IdentityServer login page elements
+    // Verify IdentityServer login page elements (or equivalent form)
     await expect(page.locator('input[name="Username"]')).toBeVisible();
     await expect(page.locator('input[name="Password"]')).toBeVisible();
     await expect(page.locator('button:has-text("Login")')).toBeVisible();
@@ -126,33 +143,45 @@ test.describe('Login Flow', () => {
   });
 
   test('should show error message with invalid credentials', async ({ page }) => {
+    // ensure a clean guest session
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await clearAuthTokens(page);
+    await logout(page).catch(() => {});
+    await page.goto('/');
 
-    // Click user menu and then Login
+    // Click user menu and then Login (robust selectors)
     const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
+    await userIcon.waitFor({ state: 'visible', timeout: 10000 });
     await userIcon.click();
     await page.waitForTimeout(500);
 
     const loginOption = page.locator('button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")').first();
+    const count = await loginOption.count();
+    expect(count).toBeGreaterThan(0);
     await loginOption.click();
 
-    // Wait for IdentityServer login page
-    await page.waitForURL(/sts\.skoruba\.local.*/);
+    // Wait for login form to appear (either STS host or local login page)
+    await Promise.race([
+      page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 15000 }),
+      page.waitForURL(/localhost\/Account\/Login.*/, { timeout: 15000 }),
+      page.waitForSelector('input[name="Username"]', { timeout: 15000 })
+    ]);
 
     // Try to login with invalid credentials
     await page.fill('input[name="Username"]', 'invalid_user');
     await page.fill('input[name="Password"]', 'wrong_password');
     await page.click('button:has-text("Login")');
 
-    // Wait a moment for error to appear
+    // Wait a moment for error or navigation
     await page.waitForTimeout(2000);
 
-    // Should still be on IdentityServer page (didn't redirect back)
-    expect(page.url()).toContain('sts.skoruba.local');
+    // Should still be on a login page (not redirected back to app)
+    const currentUrl = page.url();
+    expect(currentUrl).toMatch(/sts\.skoruba\.local|\/Account\/Login/);
+    expect(currentUrl).not.toContain('dashboard');
 
-    // Error message might be displayed (implementation varies)
+    // Error message should be visible when credentials are invalid
     const errorMessage = page.locator('text=/invalid.*username.*password|Invalid credentials/i');
-    await errorMessage.isVisible({ timeout: 3000 }).catch(() => false);
+    await expect(errorMessage.first()).toBeVisible({ timeout: 5000 });
   });
 });

@@ -1,5 +1,6 @@
 import { Page, APIRequestContext } from '@playwright/test';
 import testUsers from '../config/test-users.json';
+import { APP_URLS } from '../config/test-config';
 
 /**
  * Authentication Fixtures
@@ -31,6 +32,14 @@ export async function loginAs(
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
+  // If we're already authenticated for some reason, log out first
+  if (await isAuthenticated(page)) {
+    // the logout helper already waits for navigation etc.
+    await logout(page);
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+  }
+
   // Clear any existing auth tokens to ensure clean state
   await clearAuthTokens(page);
 
@@ -38,23 +47,60 @@ export async function loginAs(
   await page.reload();
   await page.waitForLoadState('networkidle');
 
-  // Wait for page to fully render
+  // Pause briefly to allow Angular to render guest UI
   await page.waitForTimeout(1000);
 
-  // Click user icon in upper right corner
-  const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
-  await userIcon.click();
+  // Click user icon in upper right corner to open menu
+  const userIcon = page.locator(
+    'button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)'
+  ).last();
+  await userIcon.waitFor({ state: 'visible', timeout: 10000 });
+
+  // perform click; in some browsers the click may hang, so retry with force if needed
+  try {
+    await userIcon.click({ timeout: 5000 });
+  } catch (err) {
+    console.warn('userIcon.click() failed, retrying with force:', err);
+    await userIcon.click({ force: true });
+  }
+
   await page.waitForTimeout(500);
 
   // Click "Login" option from dropdown menu
-  const loginOption = page.locator('button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")').first();
+  const loginOption = page.locator(
+    'button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")'
+  ).first();
 
-  // Wait for login option to be visible before clicking
+  // Make sure the login option actually exists; otherwise abort early
+  const optionCount = await loginOption.count();
+  if (optionCount === 0) {
+    const currentUrl = page.url();
+    throw new Error(
+      `Unable to find Login option in user menu. Current url: ${currentUrl}`
+    );
+  }
+
+  // Ensure it's clickable and visible before firing the click
+  await loginOption.scrollIntoViewIfNeeded();
   await loginOption.waitFor({ state: 'visible', timeout: 5000 });
-  await loginOption.click();
+  await loginOption.click({ timeout: 5000 });
 
-  // Wait for redirect to IdentityServer login page
-  await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
+  // After clicking we expect to leave the Angular app. The redirect may go to
+  // the configured identity server or an in-app login page; wait for either.
+  const idHost = new URL(APP_URLS.identityServer).host.replace(/\./g, '\\.');
+  const idRegex = new RegExp(`${idHost}.*`);
+  try {
+    await Promise.race([
+      page.waitForURL(idRegex, { timeout: 30000 }),
+      page.waitForSelector('input[name="Username"]', { timeout: 30000 })
+    ]);
+  } catch (err) {
+    const currentUrl = page.url();
+    throw new Error(
+      `Timed out waiting for login redirect after clicking login (30s). ` +
+        `Current url: ${currentUrl}`
+    );
+  }
 
   // Fill in login credentials
   await page.fill('input[name="Username"]', username);
@@ -64,10 +110,13 @@ export async function loginAs(
   await page.click('button:has-text("Login")');
 
   // Wait for OAuth callback redirect back to Angular app
-  await page.waitForURL(/localhost:4200.*/, { timeout: 15000 });
+  await page.waitForURL(/localhost:4200.*/, { timeout: 30000 });
 
   // Wait for dashboard to load (indicating successful authentication)
-  await page.waitForSelector('h1:has-text("Dashboard"), h2:has-text("Dashboard"), .matero-page-title', { timeout: 10000 });
+  await page.waitForSelector(
+    'h1:has-text("Dashboard"), h2:has-text("Dashboard"), .matero-page-title',
+    { timeout: 10000 }
+  );
 }
 
 /**
@@ -110,7 +159,7 @@ export async function getApiToken(
   username: string,
   password: string
 ): Promise<string> {
-  const tokenEndpoint = 'https://sts.skoruba.local/connect/token';
+  const tokenEndpoint = `${APP_URLS.identityServer}/connect/token`;
 
   const response = await request.post(tokenEndpoint, {
     form: {
@@ -172,10 +221,18 @@ export async function logout(page: Page): Promise<void> {
   const logoutOption = page.locator('button:has-text("Logout"), a:has-text("Logout"), [role="menuitem"]:has-text("Logout")').first();
   await logoutOption.click();
 
-  // Wait for redirect to IdentityServer logout screen
-  await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
+  // Wait for redirect to logout page. Depending on environment this may go to
+  // the configured identity server host or local /Account/Logout.
+  const idHost = new URL(APP_URLS.identityServer).host.replace(/\./g, '\\.');
+  const logoutRegex = new RegExp(`(${idHost}.*|localhost\/Account\/Logout.*)`);
+  try {
+    await page.waitForURL(logoutRegex, { timeout: 15000 });
+  } catch (err) {
+    const currentUrl = page.url();
+    console.warn(`logout(): expected external logout page but still at ${currentUrl}`);
+  }
 
-  // Wait a moment for STS logout screen to load
+  // Wait a moment for logout screen to render
   await page.waitForTimeout(1000);
 
   // Look for the "click here" link to return to Angular

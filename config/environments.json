@@ -3,7 +3,7 @@
     "angularUrl": "http://localhost:4200",
     "apiUrl": "https://localhost:44378",
     "apiBaseUrl": "https://localhost:44378/api/v1",
-    "identityServerUrl": "https://sts.skoruba.local",
+    "identityServerUrl": "https://localhost:44310",
     "timeout": 30000,
     "description": "Local development environment"
   },
