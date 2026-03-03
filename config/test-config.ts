@@ -11,7 +11,7 @@
 export const APP_URLS = {
   angular: 'http://localhost:4200',
   api: 'https://localhost:44378/api/v1',
-  identityServer: 'https://sts.skoruba.local',
+  identityServer: 'https://localhost:44310',
 } as const;
 
 /**

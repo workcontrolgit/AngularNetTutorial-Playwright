@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { APP_URLS } from '../config/test-config';
 
 test('Diagnostic: Check Angular app behavior', async ({ page }) => {
   console.log('\n=== DIAGNOSTIC TEST ===');
@@ -11,7 +12,8 @@ test('Diagnostic: Check Angular app behavior', async ({ page }) => {
   console.log('Current URL:', currentUrl);
 
   // Check if we're on IdentityServer or Angular
-  if (currentUrl.includes('sts.skoruba.local')) {
+  const idHost = new URL(APP_URLS.identityServer).host;
+  if (currentUrl.includes(idHost)) {
     console.log('✅ Redirected to IdentityServer (AUTH ENABLED)');
   } else if (currentUrl.includes('localhost:4200')) {
     console.log('❌ Stayed on Angular app (AUTH DISABLED)');

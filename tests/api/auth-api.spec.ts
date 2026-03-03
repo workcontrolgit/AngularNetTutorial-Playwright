@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { getApiToken, getTokenForRole, loginAsRole, getTokenFromProfile, logout } from '../../fixtures/auth.fixtures';
+import { getApiToken, getTokenForRole, loginAsRole, getTokenFromProfile, logout, clearAuthTokens } from '../../fixtures/auth.fixtures';
+import { APP_URLS } from '../../config/test-config';
 
 /**
  * Authentication API Tests
@@ -19,8 +20,8 @@ import { getApiToken, getTokenForRole, loginAsRole, getTokenFromProfile, logout 
 let authFailed = false;
 
 test.describe('Authentication API', () => {
-  const identityServerUrl = 'https://sts.skoruba.local';
-  const baseURL = 'https://localhost:44378/api/v1';
+  const identityServerUrl = APP_URLS.identityServer;
+  const baseURL = APP_URLS.api;
 
   test.beforeEach(async ({ page }) => {
     // Try to detect if IdentityServer is available
@@ -118,19 +119,33 @@ test.describe('Authentication API', () => {
   test('should reject request with invalid credentials', async ({ page }) => {
     if (authFailed) test.skip();
 
-    // Try to login with invalid credentials
+    // ensure clean state
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await clearAuthTokens(page);
+    await logout(page).catch(() => {});
+    await page.goto('/');
 
-    const userIcon = page.locator('button mat-icon:has-text("account_circle")').last();
+    // open user menu safely
+    const userIcon = page.locator(
+      'button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)'
+    ).last();
+    await userIcon.waitFor({ state: 'visible', timeout: 10000 });
     await userIcon.click();
     await page.waitForTimeout(500);
 
-    const loginOption = page.locator('[role="menuitem"]:has-text("Login")').first();
+    const loginOption = page.locator(
+      'button:has-text("Login"), a:has-text("Login"), [role="menuitem"]:has-text("Login")'
+    ).first();
+    const optCount = await loginOption.count();
+    expect(optCount).toBeGreaterThan(0);
+    await loginOption.waitFor({ state: 'visible', timeout: 5000 });
     await loginOption.click();
 
-    // Should redirect to IdentityServer
-    await page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 10000 });
+    // Wait for some indication that we're on the login page (STS or form)
+    await Promise.race([
+      page.waitForURL(/sts\.skoruba\.local.*/, { timeout: 15000 }),
+      page.waitForSelector('input[name="Username"]', { timeout: 15000 })
+    ]);
 
     // Dismiss cookie consent if it appears
     const cookieButton = page.locator('button:has-text("Got it")');
@@ -139,23 +154,27 @@ test.describe('Authentication API', () => {
       await cookieButton.click();
     }
 
-    // Enter invalid credentials
+    // Enter invalid credentials and submit
     await page.locator('input[name="Username"]').fill('invaliduser');
     await page.locator('input[name="Password"]').fill('wrongpassword');
-
-    // Click Login button (not submit, as it's a regular button)
     await page.locator('button:has-text("Login")').click();
 
-    // Wait for response
+    // Wait shortly for potential navigation
     await page.waitForTimeout(3000);
 
-    // Should still be on login page (not redirected back to app)
-    // This proves authentication failed
+    // Should still be on some form page (not navigated back to Angular)
     const currentUrl = page.url();
-    expect(currentUrl).toContain('sts.skoruba.local');
-
-    // Should NOT be on the dashboard (successful login redirects to dashboard)
+    // Allow either the STS host or the local account login page
+    const idHost = new URL(APP_URLS.identityServer).host;
+    const validPrefixes = [idHost, '/Account/Login'];
+    expect(validPrefixes.some(prefix => currentUrl.includes(prefix))).toBe(true);
     expect(currentUrl).not.toContain('dashboard');
+
+    // Optionally verify error message appears
+    const errorBanner = page.locator('text=/invalid|error|failed/i').first();
+    if (await errorBanner.count() > 0) {
+      await expect(errorBanner).toBeVisible();
+    }
   });
 
   test('should include proper claims in token', async ({ page }) => {
@@ -361,7 +380,7 @@ test.describe('Authentication API', () => {
 
     // Check for issuer claim (should be IdentityServer URL)
     expect(payload.iss).toBeDefined();
-    expect(payload.iss).toContain('sts.skoruba.local');
+    expect(payload.iss).toContain(new URL(APP_URLS.identityServer).host);
   });
 });
 

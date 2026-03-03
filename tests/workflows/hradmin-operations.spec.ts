@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout, isAuthenticated } from '../../fixtures/auth.fixtures';
 import { createSalaryRangeData, createPositionData, createEmployeeData } from '../../fixtures/data.fixtures';
 import { PositionFormPage } from '../../page-objects/position-form.page';
 import { EmployeeFormPage } from '../../page-objects/employee-form.page';
@@ -188,26 +188,15 @@ test.describe('HRAdmin Operations Workflow', () => {
       }
     }
 
-    // Step 7: Logout
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    // Step 7: Logout using proper logout fixture
+    await logout(page);
 
-    const userMenu = page.locator('button, a').filter({ hasText: /logout|sign.*out|profile|account/i });
+    // After logout, should be back on Angular app as Guest/Anonymous
+    expect(page.url()).toMatch(/localhost:4200/);
 
-    if (await userMenu.first().isVisible({ timeout: 3000 })) {
-      await userMenu.first().click();
-      await page.waitForTimeout(500);
-
-      const logoutButton = page.locator('button, a').filter({ hasText: /logout|sign.*out/i });
-      if (await logoutButton.last().isVisible({ timeout: 2000 })) {
-        await logoutButton.last().click();
-        await page.waitForTimeout(2000);
-
-        // Verify logged out
-        const isLoggedOut = page.url().includes('login') || page.url().includes('sts.skoruba.local');
-        expect(isLoggedOut).toBe(true);
-      }
-    }
+    // Verify user is no longer authenticated
+    const authenticated = await isAuthenticated(page);
+    expect(authenticated).toBe(false);
   });
 
   test('should delete records as HRAdmin', async ({ page }) => {

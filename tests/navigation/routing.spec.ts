@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
+import { loginAsRole, logout, isAuthenticated } from '../../fixtures/auth.fixtures';
 
 /**
  * Navigation & Routing Tests
@@ -316,22 +316,17 @@ test.describe('Navigation & Routing', () => {
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
 
-    // Logout
-    const userMenu = page.locator('button, a').filter({ hasText: /logout|sign.*out|profile|account/i });
+    // Logout using the proper logout fixture
+    await logout(page);
 
-    if (await userMenu.first().isVisible({ timeout: 3000 })) {
-      await userMenu.first().click();
-      await page.waitForTimeout(500);
+    // After logout, should be back on Angular app as Guest/Anonymous
+    expect(page.url()).toMatch(/localhost:4200/);
 
-      const logoutButton = page.locator('button, a').filter({ hasText: /logout|sign.*out/i });
-      if (await logoutButton.last().isVisible({ timeout: 2000 })) {
-        await logoutButton.last().click();
-        await page.waitForTimeout(2000);
+    // Verify user is no longer authenticated
+    const authenticated = await isAuthenticated(page);
+    expect(authenticated).toBe(false);
 
-        // Should redirect to login
-        const isOnLogin = page.url().includes('login') || page.url().includes('sts.skoruba.local');
-        expect(isOnLogin).toBe(true);
-      }
-    }
+    // Should see Guest heading
+    await expect(page.locator('h4:has-text("Guest")')).toBeVisible();
   });
 });
