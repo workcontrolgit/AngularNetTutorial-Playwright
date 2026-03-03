@@ -1,212 +1,314 @@
-# Playwright Testing Suite
-## AngularNetTutorial - E2E & API Testing
+# Playwright E2E Testing Suite
+## AngularNetTutorial - End-to-End & API Testing
 
-[![Playwright Tests](https://github.com/workcontrolgit/AngularNetTutorial/actions/workflows/playwright.yml/badge.svg)](https://github.com/workcontrolgit/AngularNetTutorial/actions/workflows/playwright.yml)
-[![Test Coverage](https://img.shields.io/badge/coverage-25%25-yellow)](docs/IMPLEMENTATION_PLAN.md)
-[![Tests Passing](https://img.shields.io/badge/tests-32%2F126-blue)](docs/IMPLEMENTATION_PLAN.md)
-
-Comprehensive automated testing for the CAT Pattern (Client, API Resource, Token Service) full-stack application.
+Automated testing suite for the AngularNetTutorial CAT Pattern application using [Playwright](https://playwright.dev).
 
 ---
 
-## 🎯 Project Overview
+## 📖 What is This?
 
-This testing suite provides end-to-end browser tests and API integration tests for the **AngularNetTutorial** project, covering:
+This repository contains **end-to-end (E2E) tests** that verify the entire AngularNetTutorial application works correctly from a user's perspective. Tests simulate real user interactions in a browser—clicking buttons, filling forms, navigating pages—to ensure features work as expected.
 
-- ✅ **Authentication & Authorization** - OIDC/OAuth 2.0 flows with IdentityServer
-- ✅ **Role-Based Access Control** - Employee, Manager, and HRAdmin roles
-- ✅ **CRUD Operations** - Employees, Departments, Positions, Salary Ranges
-- ✅ **API Integration** - Direct endpoint testing with token validation
-- ✅ **Cross-Browser Testing** - Chromium, Firefox, WebKit
-- ✅ **Visual & Accessibility** - Regression testing and ARIA compliance
+### What is Playwright?
+
+[Playwright](https://playwright.dev) is a modern browser automation tool by Microsoft that allows you to:
+- Automate web browsers (Chromium, Firefox, WebKit)
+- Test web applications like a real user would interact with them
+- Run tests in parallel across multiple browsers
+- Debug tests with time-travel and visual tools
+- Integrate with CI/CD pipelines
+
+### What We Test
+
+- ✅ **Authentication Flows** - Login/logout with IdentityServer (OAuth 2.0/OIDC)
+- ✅ **Role-Based Access Control** - Different permissions for Employee, Manager, HRAdmin
+- ✅ **CRUD Operations** - Create, read, update, delete employees, departments, positions
+- ✅ **Dashboard Features** - Charts, metrics, and data visualization
+- ✅ **API Integration** - Direct API endpoint testing
+- ✅ **Visual Regression** - Screenshot comparison to detect UI changes
+- ✅ **Accessibility** - ARIA compliance and keyboard navigation
+- ✅ **Cross-Browser** - Tests run on Chromium, Firefox, and Safari (WebKit)
 
 ---
 
-## 📋 Prerequisites
+## ⚠️ Important: Prerequisites
 
-Before you begin, ensure you have the following installed:
+### 1. Install Required Tools
 
-- **Node.js 18+** - [Download](https://nodejs.org/)
+Before running tests, you need:
+
+- **Node.js 20+** - [Download](https://nodejs.org/)
 - **npm 10+** - Included with Node.js
 - **Git** - [Download](https://git-scm.com/)
-- **Visual Studio Code** (recommended) - [Download](https://code.visualstudio.com/)
 
-**Application Under Test must be running:**
-- Angular Client: `http://localhost:4200`
-- .NET API: `https://localhost:44378`
-- IdentityServer: `https://sts.skoruba.local`
+### 2. **CRITICAL: Start All Services FIRST**
+
+**Tests will fail if the application is not running!**
+
+You must start these three services **before** running any tests:
+
+#### Terminal 1: IdentityServer (Authentication)
+```bash
+cd C:\apps\AngularNetTutotial\TokenService\Duende-IdentityServer\src\Duende.STS.Identity
+dotnet run
+```
+**Wait for:** `Now listening on: https://sts.skoruba.local`
+
+#### Terminal 2: .NET Web API (Backend)
+```bash
+cd C:\apps\AngularNetTutotial\ApiResources\TalentManagement-API
+dotnet run
+```
+**Wait for:** `Now listening on: https://localhost:44378`
+
+#### Terminal 3: Angular Client (Frontend)
+```bash
+cd C:\apps\AngularNetTutotial\Clients\TalentManagement-Angular-Material\talent-management
+npm start
+```
+**Wait for:** `Angular Live Development Server is listening on localhost:4200`
+
+**Verify all services are running:**
+- Angular: http://localhost:4200 (should show login page)
+- API: https://localhost:44378/swagger (should show Swagger UI)
+- IdentityServer: https://sts.skoruba.local (should show IdentityServer page)
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### Step 1: Install Dependencies
 
 ```bash
 cd C:\apps\AngularNetTutotial\Tests\AngularNetTutorial-Playwright
 npm install
 ```
 
-### 2. Install Playwright Browsers
+### Step 2: Install Playwright Browsers
+
+First-time setup only:
 
 ```bash
 npx playwright install
 ```
 
-This installs Chromium, Firefox, and WebKit browsers for testing.
+This downloads Chromium, Firefox, and WebKit browsers for testing.
 
-### 3. Run Your First Test
+### Step 3: Run Tests
+
+**Make sure all services are running first!** (See Prerequisites above)
 
 ```bash
-# Run all tests
+# Run all tests (headless mode)
 npx playwright test
 
-# Run in headed mode (see browser)
+# Run tests and see the browser (headed mode)
 npx playwright test --headed
 
-# Run specific test file
-npx playwright test tests/TalentManagement.spec.ts
-
-# Run in UI mode (interactive)
+# Run tests with interactive UI (recommended for beginners)
 npx playwright test --ui
 ```
 
-### 4. View Test Reports
+### Step 4: View Test Report
+
+After tests complete:
 
 ```bash
 npx playwright show-report
 ```
 
----
-
-## 📂 Project Structure
-
-```
-AngularNetTutorial-Playwright/
-├── docs/                           # Documentation
-│   ├── PROJECT_OVERVIEW.md         # Project goals & architecture
-│   ├── IMPLEMENTATION_PLAN.md      # Phased development plan
-│   └── QUICK_START.md              # Getting started guide
-│
-├── tests/                          # Test files
-│   ├── auth/                       # Authentication tests
-│   ├── employee-management/        # Employee CRUD tests
-│   ├── department-management/      # Department tests
-│   ├── position-management/        # Position tests
-│   ├── salary-ranges/              # Salary range tests
-│   ├── dashboard/                  # Dashboard tests
-│   ├── api/                        # API integration tests
-│   ├── workflows/                  # End-to-end scenarios
-│   └── TalentManagement.spec.ts    # Demo walkthrough test
-│
-├── fixtures/                       # Reusable test helpers
-│   ├── auth.fixtures.ts            # Login/logout helpers
-│   ├── data.fixtures.ts            # Test data factories
-│   └── api.fixtures.ts             # API request helpers
-│
-├── page-objects/                   # Page Object Models
-│   ├── auth/                       # Login pages
-│   ├── employee-list.page.ts       # Employee list POM
-│   └── employee-form.page.ts       # Employee form POM
-│
-├── utils/                          # Utility functions
-│   ├── token-manager.ts            # JWT token utilities
-│   └── test-data-generator.ts      # Test data generation
-│
-├── config/                         # Configuration files
-│   ├── test-users.json             # Test account credentials
-│   └── environments.json           # Environment URLs
-│
-├── playwright.config.ts            # Playwright configuration
-├── package.json                    # Dependencies
-└── README.md                       # This file
-```
+This opens an HTML report showing which tests passed/failed with screenshots and videos.
 
 ---
 
-## 🧪 Common Commands
+## 🧪 Running Tests
 
-### Running Tests
+### Basic Commands
 
 ```bash
 # Run all tests
 npx playwright test
 
-# Run tests in headed mode (see browser)
+# Run tests in headed mode (see browser actions)
 npx playwright test --headed
 
-# Run tests in UI mode (interactive debugging)
+# Run tests in UI mode (interactive debugging - RECOMMENDED)
 npx playwright test --ui
 
-# Run specific test file
+# Run tests in debug mode (step-by-step debugger)
+npx playwright test --debug
+```
+
+### Run Specific Tests
+
+```bash
+# Run a specific test file
 npx playwright test tests/auth/login.spec.ts
 
-# Run tests matching a pattern
+# Run all tests in a folder
 npx playwright test tests/employee-management/
 
-# Run tests in debug mode
-npx playwright test --debug
+# Run tests matching a name pattern
+npx playwright test -g "should login successfully"
 
-# Run tests in specific browser
+# Run only failed tests from last run
+npx playwright test --last-failed
+```
+
+### Run in Different Browsers
+
+```bash
+# Run in Chromium (default)
 npx playwright test --project=chromium
+
+# Run in Firefox
 npx playwright test --project=firefox
+
+# Run in Safari (WebKit)
 npx playwright test --project=webkit
-```
 
-### Reports & Debugging
-
-```bash
-# Show HTML test report
-npx playwright show-report
-
-# Generate trace for debugging
-npx playwright test --trace on
-
-# Show trace viewer
-npx playwright show-trace trace.zip
-
-# Generate screenshots on failure (already configured)
-# Screenshots saved to: test-results/
-```
-
-### Test Generation
-
-```bash
-# Generate tests by recording browser actions
-npx playwright codegen http://localhost:4200
+# Run in all browsers
+npx playwright test --project=chromium --project=firefox --project=webkit
 ```
 
 ---
 
-## 👥 Test Users
+## 🐛 Debugging Tests
 
-The application has three user roles with different permissions:
+Playwright offers several powerful debugging tools:
+
+### 1. UI Mode (Recommended for Beginners)
+
+The **best way** to debug tests interactively:
+
+```bash
+npx playwright test --ui
+```
+
+**Features:**
+- Watch tests run in real-time
+- Time-travel debugging (go back to any step)
+- Inspect DOM at each step
+- View network requests
+- Pick specific tests to run
+- See screenshots and videos
+
+### 2. Debug Mode (Step-by-Step)
+
+Run tests with the Playwright Inspector:
+
+```bash
+npx playwright test --debug
+```
+
+**Features:**
+- Pause execution at each step
+- Step through test line-by-line
+- Inspect page elements with selector highlighter
+- View console logs
+- Execute Playwright commands manually
+
+### 3. Headed Mode (Watch Browser)
+
+See the browser as tests run:
+
+```bash
+npx playwright test --headed
+```
+
+Good for quickly seeing what's happening without the full debugger.
+
+### 4. Screenshots & Videos
+
+Tests automatically capture screenshots and videos on failure:
+
+```bash
+# Screenshots and videos saved to:
+test-results/<test-name>/
+```
+
+View them in the HTML report:
+
+```bash
+npx playwright show-report
+```
+
+### 5. Trace Viewer (Advanced)
+
+Record and replay test execution:
+
+```bash
+# Generate trace
+npx playwright test --trace on
+
+# View trace
+npx playwright show-trace trace.zip
+```
+
+**Features:**
+- Complete timeline of test execution
+- Network activity
+- Console logs
+- DOM snapshots at each step
+- Screenshots
+
+---
+
+## 📂 Test Organization
+
+Tests are organized by feature area:
+
+```
+tests/
+├── auth/                       # Login, logout, authentication
+├── employee-management/        # Employee CRUD operations
+├── department-management/      # Department CRUD
+├── position-management/        # Position CRUD (HRAdmin only)
+├── salary-ranges/              # Salary range management
+├── dashboard/                  # Dashboard features
+├── api/                        # Direct API endpoint tests
+├── workflows/                  # Multi-step user workflows
+├── visual/                     # Visual regression tests
+├── accessibility/              # ARIA compliance tests
+└── performance/                # Performance tests
+```
+
+**Supporting Files:**
+- `fixtures/` - Reusable test helpers (login, test data, API calls)
+- `page-objects/` - Page Object Models for complex pages
+- `config/` - Test users, environment URLs
+- `playwright.config.ts` - Playwright configuration
+
+---
+
+## 👥 Test User Accounts
+
+The application has three test users with different permission levels:
 
 | Role | Username | Password | Permissions |
 |------|----------|----------|-------------|
-| **Employee** | `employee1` | `Pa$$word123` | Read-only access |
-| **Manager** | `ashtyn1` | `Pa$$word123` | Create/edit employees & departments |
-| **HRAdmin** | `admin1` | `Pa$$word123` | Full administrative access |
+| **Employee** | `antoinette16` | `Pa$$word123` | **Read-only** - Can view data only |
+| **Manager** | `rosamond33` | `Pa$$word123` | **Create/Update** - Can create and edit employees & departments (cannot delete) |
+| **HRAdmin** | `ashtyn1` | `Pa$$word123` | **Full Access** - Complete CRUD on all entities including positions and salary ranges |
+
+**Note:** These credentials are defined in `config/test-users.json` and match the users configured in IdentityServer.
 
 ---
 
 ## 🔧 Configuration
 
-### Playwright Configuration
+### Playwright Config (`playwright.config.ts`)
 
-Key settings in `playwright.config.ts`:
-
+Key settings:
 - **Base URL:** `http://localhost:4200`
 - **Timeout:** 30 seconds per test
-- **Retries:** 2 on CI, 0 locally
+- **Retries:** 2 retries on CI, 0 locally
 - **Browsers:** Chromium, Firefox, WebKit
-- **Screenshots:** On failure only
-- **Videos:** On first retry
+- **Screenshots:** Captured on failure
+- **Videos:** Recorded on first retry
 - **Reporters:** HTML, JSON, JUnit
 
-### Environment URLs
-
-Configure environment-specific URLs in `config/environments.json`:
+### Environment URLs (`config/environments.json`)
 
 ```json
 {
@@ -220,114 +322,145 @@ Configure environment-specific URLs in `config/environments.json`:
 
 ---
 
-## 📚 Documentation
-
-### Getting Started
-- **[Quick Start Guide](docs/QUICK_START.md)** - Get testing in 10 minutes
-- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - Goals, architecture, and scope
-- **[Implementation Plan](docs/IMPLEMENTATION_PLAN.md)** - Phased development roadmap
-
-### Advanced Topics
-- **Writing Tests** - Best practices and patterns (coming soon)
-- **Page Objects** - POM implementation guide (coming soon)
-- **CI/CD Integration** - GitHub Actions setup (coming soon)
-
----
-
 ## 🐛 Troubleshooting
+
+### Tests Fail with Connection Errors
+
+**Problem:** `net::ERR_CONNECTION_REFUSED` or timeout errors
+
+**Solution:**
+1. Verify all three services are running (Angular, API, IdentityServer)
+2. Check URLs are accessible:
+   - http://localhost:4200
+   - https://localhost:44378/swagger
+   - https://sts.skoruba.local
 
 ### Tests Timeout
 
-**Problem:** Tests fail with timeout errors
+**Problem:** Tests fail with `Test timeout of 30000ms exceeded`
 
-**Solution:**
+**Solution:** Increase timeout in `playwright.config.ts` or for specific tests:
+
 ```typescript
-// Increase timeout for specific test
+// In your test file
 test.setTimeout(60000); // 60 seconds
-
-// Or globally in playwright.config.ts
-timeout: 60 * 1000
 ```
 
-### Element Not Found
+### Login Tests Fail
 
-**Problem:** `Element not found` errors
+**Problem:** Authentication tests fail
+
+**Possible causes:**
+1. IdentityServer not running
+2. Wrong test credentials
+3. Browser cookies/storage interfering
 
 **Solution:**
-```typescript
-// Add explicit wait
-await page.waitForSelector('button:has-text("Login")');
-await page.click('button:has-text("Login")');
-```
+1. Restart IdentityServer
+2. Verify test users exist in IdentityServer
+3. Run tests in UI mode to see what's happening: `npx playwright test --ui`
 
-### Application Not Running
+### Element Not Found Errors
 
-**Problem:** Tests fail because app isn't running
+**Problem:** `Element not found` or `Selector not found`
 
-**Solution:** Start all three services:
+**Solution:**
+1. Use UI mode to inspect the page: `npx playwright test --ui`
+2. Check if element has loaded: add `await page.waitForSelector('selector')`
+3. Verify the selector is correct using Playwright Inspector
+
+### Tests Pass Locally but Fail in CI
+
+**Problem:** Tests work on your machine but fail in GitHub Actions
+
+**Possible causes:**
+1. Timing issues (CI is slower)
+2. Browser differences
+3. Environment variables
+
+**Solution:**
+1. Increase timeouts for CI
+2. Add explicit waits for elements
+3. Check CI logs for specific errors
+
+---
+
+## 📊 Viewing Test Results
+
+### HTML Report (Recommended)
 
 ```bash
-# Terminal 1: IdentityServer
-cd C:\apps\AngularNetTutotial\TokenService\Duende-IdentityServer\src\Duende.STS.Identity
-dotnet run
-
-# Terminal 2: .NET API
-cd C:\apps\AngularNetTutotial\ApiResources\TalentManagement-API
-dotnet run
-
-# Terminal 3: Angular Client
-cd C:\apps\AngularNetTutotial\Clients\TalentManagement-Angular-Material\talent-management
-npm start
+npx playwright show-report
 ```
+
+**Shows:**
+- ✅ Passed/Failed tests
+- ⏱️ Test duration
+- 📷 Screenshots on failure
+- 🎥 Videos of test execution
+- 📋 Error messages and stack traces
+
+### Command Line Output
+
+```bash
+npx playwright test
+```
+
+Shows real-time test progress with pass/fail indicators.
+
+### CI/CD Reports
+
+Tests run automatically on GitHub Actions when you push code. Results appear in the Actions tab.
+
+---
+
+## 📚 Learn More
+
+### Playwright Documentation
+- [Official Docs](https://playwright.dev)
+- [Getting Started](https://playwright.dev/docs/intro)
+- [API Reference](https://playwright.dev/docs/api/class-playwright)
+- [Best Practices](https://playwright.dev/docs/best-practices)
+
+### Project Documentation
+- [CLAUDE.md](CLAUDE.md) - Complete development guide
+- [docs/](docs/) - Additional documentation
+
+### Related Repositories
+- [AngularNetTutorial](https://github.com/workcontrolgit/AngularNetTutorial) - Main tutorial repository
+- [Angular Client](../Clients/TalentManagement-Angular-Material/) - Frontend application
+- [.NET API](../ApiResources/TalentManagement-API/) - Backend API
+- [IdentityServer](../TokenService/Duende-IdentityServer/) - Authentication service
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to get started:
+### Writing New Tests
 
-1. **Read the Implementation Plan** - See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for current tasks
-2. **Pick a Task** - Choose an uncompleted task from Phase 1-4
-3. **Write Tests** - Follow existing patterns and naming conventions
-4. **Run Tests Locally** - Ensure all tests pass before submitting
-5. **Submit PR** - Include test results and update implementation plan
+1. Choose the appropriate test folder (e.g., `tests/employee-management/`)
+2. Create a new `.spec.ts` file
+3. Follow existing test patterns
+4. Use fixtures for common operations (login, test data)
+5. Run tests locally before committing
 
-### Coding Standards
+### Test Writing Best Practices
 
-- Use TypeScript strict mode
-- Follow Page Object Model pattern
-- Write descriptive test names
-- Add comments for complex logic
-- Keep tests independent and isolated
-
----
-
-## 📊 Progress
-
-**Current Status:** Phase 1 - Foundation (In Progress)
-
-- **Completed:** 5/34 tasks (15%)
-- **Overall Progress:** 5/126 tasks (4%)
-
-See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for detailed progress tracking.
-
----
-
-## 🔗 Related Links
-
-- **Main Repository:** [AngularNetTutorial](https://github.com/workcontrolgit/AngularNetTutorial)
-- **Playwright Docs:** [playwright.dev](https://playwright.dev)
-- **Tutorial Series:** [Tutorial Documentation](../../docs/TUTORIAL.md)
+- **Keep tests independent** - Each test should work in isolation
+- **Use descriptive names** - `test('should allow Manager to create employee', ...)`
+- **Use Page Object Models** - For complex pages, create POM in `page-objects/`
+- **Use fixtures** - Reuse login, data creation helpers from `fixtures/`
+- **Clean up test data** - Delete created records in `afterEach`
+- **Avoid hard-coded waits** - Use `waitForSelector()` instead of `waitForTimeout()`
 
 ---
 
 ## 📞 Support
 
-**Questions or Issues?**
-
+**Questions?**
+- Check [Playwright Documentation](https://playwright.dev)
+- Review existing tests for examples
 - Open an issue in the repository
-- Check the [Quick Start Guide](docs/QUICK_START.md)
-- Review the [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
 
 ---
 
@@ -337,5 +470,6 @@ This project is part of the AngularNetTutorial repository. See parent repository
 
 ---
 
-**Last Updated:** February 12, 2026
-**Version:** 1.0.0
+**Last Updated:** March 3, 2026
+**Playwright Version:** Latest
+**Node.js Required:** 20+
