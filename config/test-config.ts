@@ -9,9 +9,9 @@
  * Application URLs
  */
 export const APP_URLS = {
-  angular: 'http://localhost:4200',
-  api: 'https://localhost:44378/api/v1',
-  identityServer: 'https://localhost:44310',
+  angular: process.env.ANGULAR_APP_URL || 'http://localhost:4200',
+  api: process.env.API_APP_URL || 'https://localhost:44378/api/v1',
+  identityServer: process.env.IDENTITY_SERVER_URL || 'https://localhost:44310',
 } as const;
 
 /**
