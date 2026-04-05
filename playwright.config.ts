@@ -82,6 +82,17 @@ export default defineConfig({
       testMatch: /.*\.setup\.ts/,
     },
 
+    // Smoke Tests - critical path only (used in CI)
+    {
+      name: 'smoke',
+      testMatch: /.*smoke\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.laptop,
+      },
+      dependencies: ['setup'],
+    },
+
     // E2E Browser Tests
     {
       name: 'chromium',
