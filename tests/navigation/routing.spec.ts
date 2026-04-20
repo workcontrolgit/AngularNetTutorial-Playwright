@@ -16,7 +16,9 @@ test.describe('Navigation & Routing', () => {
   test('should protect routes requiring authentication', async ({ page }) => {
     // Try to access protected route without authentication
     await page.goto('/employees');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle'); 
+
+    TEST
 
     // With optional auth, should load as Guest/Anonymous instead of forcing redirect
     const isOnLogin = page.url().includes('login') || page.url().includes('sts.skoruba.local');
