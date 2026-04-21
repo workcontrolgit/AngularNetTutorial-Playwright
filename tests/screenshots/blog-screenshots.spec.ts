@@ -685,6 +685,7 @@ test.describe('Series 6 — AI Features', () => {
   });
 
   test('AI chat — Tab 2 HR insights with answer', async ({ page }) => {
+    test.setTimeout(90000); // Ollama inference can take 30-60s; allow extra buffer
     await loginAsRole(page, 'manager');
     await page.goto('/ai-chat');
     await settle(page, 1500);
