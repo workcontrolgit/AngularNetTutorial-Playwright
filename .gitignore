@@ -6,3 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Blog screenshots — generated PNG files are not committed (too large, regenerate by running the screenshots project)
+/screenshots-output/
+
+# screenshot-catalog.json IS committed so AI tools can reference it across sessions without re-running tests
