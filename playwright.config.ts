@@ -146,6 +146,22 @@ export default defineConfig({
       },
     },
 
+    // Blog Screenshots - captures key UI states for blog posts and documentation
+    {
+      name: 'screenshots',
+      testMatch: /tests\/screenshots\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.laptop,
+        video: 'off',
+        screenshot: 'off',    // manual screenshots only — no auto-capture
+        launchOptions: {
+          slowMo: 150,         // slow down interactions so UI fully settles before capture
+        },
+      },
+      // No setup dependency — auth is handled inline per screenshot group
+    },
+
     /* Mobile viewports (optional - uncomment to enable) */
     // {
     //   name: 'Mobile Chrome',
