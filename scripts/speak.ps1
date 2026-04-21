@@ -28,9 +28,14 @@ if ($dir -and -not (Test-Path $dir)) {
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
 }
 
+# Save to WAV file
 $synth.SetOutputToWaveFile($OutputPath)
 $synth.Speak($Text)
+
+# Play through speakers so narration is heard live during the test run
 $synth.SetOutputToDefaultAudioDevice()
+$synth.Speak($Text)
+
 $synth.Dispose()
 
 Write-Host "Audio saved: $OutputPath"
