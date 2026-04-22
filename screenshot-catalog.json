@@ -1,12 +1,329 @@
 {
-  "generated": "2026-04-21T10:22:44.270Z",
+  "generated": "2026-04-22T03:36:16.505Z",
   "screenshots": [
+    {
+      "path": "screenshots-output/series-0-architecture/anonymous-home.png",
+      "audioPath": "screenshots-output/series-0-architecture/anonymous-home.wav",
+      "series": "series-0-architecture",
+      "filename": "anonymous-home.png",
+      "capturedAt": "2026-04-22T03:36:31.141Z",
+      "description": "Full TalentManagement app in anonymous Guest state — sidebar with limited menu, header with user icon, empty dashboard placeholder.",
+      "narration": "This is the TalentManagement application before login. The sidebar shows only public routes, and the header displays a Guest user icon in the top right corner.",
+      "articles": [
+        "0.1",
+        "0.2",
+        "1.1"
+      ],
+      "tags": [
+        "anonymous",
+        "guest",
+        "home",
+        "sidebar",
+        "app-shell"
+      ],
+      "useFor": "Hero image for architecture overview articles; shows the app before login."
+    },
+    {
+      "path": "screenshots-output/series-0-architecture/sidebar-navigation.png",
+      "audioPath": "screenshots-output/series-0-architecture/sidebar-navigation.wav",
+      "series": "series-0-architecture",
+      "filename": "sidebar-navigation.png",
+      "capturedAt": "2026-04-22T03:36:42.930Z",
+      "description": "Left sidebar showing navigation menu items available to an anonymous Guest user — limited to public routes only.",
+      "narration": "The sidebar navigation shows a limited set of menu items for anonymous users. After login, additional items appear based on the user's assigned role.",
+      "articles": [
+        "0.1",
+        "1.4"
+      ],
+      "tags": [
+        "sidebar",
+        "navigation",
+        "anonymous",
+        "menu"
+      ],
+      "useFor": "Illustrate sidebar structure before discussing role-based menu visibility."
+    },
+    {
+      "path": "screenshots-output/series-0-architecture/swagger-ui-overview.png",
+      "audioPath": "screenshots-output/series-0-architecture/swagger-ui-overview.wav",
+      "series": "series-0-architecture",
+      "filename": "swagger-ui-overview.png",
+      "capturedAt": "2026-04-22T03:37:02.955Z",
+      "description": "NSwag Swagger UI for the TalentManagement .NET 10 Web API — all versioned controller groups collapsed.",
+      "narration": "The Swagger UI confirms the .NET 10 Web API is running on port 44378. You can see all the controller groups — Employees, Departments, Positions, and the AI endpoints added in Series 6.",
+      "articles": [
+        "0.1",
+        "2.1",
+        "2.4",
+        "6.1"
+      ],
+      "tags": [
+        "swagger",
+        "api",
+        "dotnet",
+        "nswag",
+        "overview"
+      ],
+      "useFor": "Show the API is running and document the full endpoint surface."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/identityserver-login-form.png",
+      "audioPath": "screenshots-output/series-1-authentication/identityserver-login-form.wav",
+      "series": "series-1-authentication",
+      "filename": "identityserver-login-form.png",
+      "capturedAt": "2026-04-22T03:37:23.444Z",
+      "description": "Duende IdentityServer 7.0 login page — Username and Password fields, Login button. Reached after clicking Login in the Angular user menu.",
+      "narration": "Clicking Login redirects to Duende IdentityServer — the token service in our CAT architecture. Enter your username and password here to receive an ID token and access token via the OAuth 2.0 PKCE flow.",
+      "articles": [
+        "1.1"
+      ],
+      "tags": [
+        "identityserver",
+        "login",
+        "oauth2",
+        "oidc",
+        "pkce"
+      ],
+      "useFor": "Illustrate the OIDC redirect step in the OAuth 2.0 PKCE flow."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/user-menu-anonymous.png",
+      "audioPath": "screenshots-output/series-1-authentication/user-menu-anonymous.wav",
+      "series": "series-1-authentication",
+      "filename": "user-menu-anonymous.png",
+      "capturedAt": "2026-04-22T03:37:37.810Z",
+      "description": "Angular app header user menu expanded in anonymous state — shows only the Login option.",
+      "narration": "Clicking the user icon in the top right opens a dropdown with a single Login option. This is where users start the OAuth 2.0 login flow.",
+      "articles": [
+        "1.1"
+      ],
+      "tags": [
+        "user-menu",
+        "anonymous",
+        "header",
+        "login-button"
+      ],
+      "useFor": "Show where users click to initiate the OIDC login flow."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/dashboard-authenticated.png",
+      "audioPath": "screenshots-output/series-1-authentication/dashboard-authenticated.wav",
+      "series": "series-1-authentication",
+      "filename": "dashboard-authenticated.png",
+      "capturedAt": "2026-04-22T03:37:59.494Z",
+      "description": "TalentManagement dashboard after successful OAuth 2.0 PKCE login as Manager — metrics cards, sidebar with manager-visible items, authenticated user avatar in header.",
+      "narration": "After a successful login, IdentityServer redirects back to the Angular app with an access token. The dashboard loads with live workforce metrics, and the sidebar now shows the Manager's available features.",
+      "articles": [
+        "1.1",
+        "1.2",
+        "1.4"
+      ],
+      "tags": [
+        "dashboard",
+        "authenticated",
+        "manager",
+        "post-login",
+        "oauth2"
+      ],
+      "useFor": "Hero image showing the successful result of the OIDC login flow."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/user-menu-authenticated.png",
+      "audioPath": "screenshots-output/series-1-authentication/user-menu-authenticated.wav",
+      "series": "series-1-authentication",
+      "filename": "user-menu-authenticated.png",
+      "capturedAt": "2026-04-22T03:38:21.333Z",
+      "description": "Angular app header user menu after login — shows Profile, Settings, and Logout options alongside the authenticated username.",
+      "narration": "Once logged in, the user menu expands to show Profile, Settings, and Logout. The Profile page is particularly useful for inspecting the ID token and access token returned by IdentityServer.",
+      "articles": [
+        "1.1",
+        "1.2"
+      ],
+      "tags": [
+        "user-menu",
+        "authenticated",
+        "header",
+        "logout",
+        "profile"
+      ],
+      "useFor": "Show the post-login user menu options including Profile and Logout."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/sidebar-hradmin-full-menu.png",
+      "audioPath": "screenshots-output/series-1-authentication/sidebar-hradmin-full-menu.wav",
+      "series": "series-1-authentication",
+      "filename": "sidebar-hradmin-full-menu.png",
+      "capturedAt": "2026-04-22T03:38:40.992Z",
+      "description": "Sidebar as seen by HRAdmin role — all menu items visible including Positions, Salary Ranges, and AI Assistant.",
+      "narration": "Logged in as HRAdmin, the sidebar shows the complete menu including Positions, Salary Ranges, and the AI Assistant — features restricted to the administrator role using ngx-permissions.",
+      "articles": [
+        "1.4"
+      ],
+      "tags": [
+        "sidebar",
+        "hradmin",
+        "role-based-ui",
+        "menu",
+        "ngx-permissions"
+      ],
+      "useFor": "Contrast with the Manager sidebar to demonstrate role-based UI rendering."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/sidebar-manager-limited-menu.png",
+      "audioPath": "screenshots-output/series-1-authentication/sidebar-manager-limited-menu.wav",
+      "series": "series-1-authentication",
+      "filename": "sidebar-manager-limited-menu.png",
+      "capturedAt": "2026-04-22T03:39:02.444Z",
+      "description": "Sidebar as seen by Manager role — Positions and Salary Ranges hidden; only Employee and Department management visible.",
+      "narration": "As a Manager, the sidebar shows only Employee and Department management. Positions and Salary Ranges are hidden — ngx-permissions reads the roles claim from the access token and removes those menu items automatically.",
+      "articles": [
+        "1.4"
+      ],
+      "tags": [
+        "sidebar",
+        "manager",
+        "role-based-ui",
+        "menu",
+        "ngx-permissions"
+      ],
+      "useFor": "Pair with the HRAdmin sidebar for a before/after role comparison."
+    },
+    {
+      "path": "screenshots-output/series-1-authentication/identityserver-logout-screen.png",
+      "audioPath": "screenshots-output/series-1-authentication/identityserver-logout-screen.wav",
+      "series": "series-1-authentication",
+      "filename": "identityserver-logout-screen.png",
+      "capturedAt": "2026-04-22T03:39:26.001Z",
+      "description": "Duende IdentityServer logout confirmation screen with a \"click here\" link to return to the Angular app.",
+      "narration": "Logout is handled by IdentityServer, not Angular. This screen confirms the session has been terminated. Clicking the link returns to the Angular app in Guest mode.",
+      "articles": [
+        "1.1"
+      ],
+      "tags": [
+        "identityserver",
+        "logout",
+        "oauth2",
+        "oidc",
+        "session"
+      ],
+      "useFor": "Illustrate the IdentityServer-managed logout redirect step."
+    },
+    {
+      "path": "screenshots-output/series-2-dotnet-api/swagger-employees-endpoints.png",
+      "audioPath": "screenshots-output/series-2-dotnet-api/swagger-employees-endpoints.wav",
+      "series": "series-2-dotnet-api",
+      "filename": "swagger-employees-endpoints.png",
+      "capturedAt": "2026-04-22T03:39:44.273Z",
+      "description": "Swagger UI Employees controller expanded — GET, POST, PUT, DELETE endpoints with versioning and JWT lock icons.",
+      "narration": "The Employees controller exposes a full set of versioned REST endpoints. The lock icons indicate which routes require a Bearer token — in this case all of them except the read endpoint for anonymous access.",
+      "articles": [
+        "2.1",
+        "2.3",
+        "2.4"
+      ],
+      "tags": [
+        "swagger",
+        "employees",
+        "crud",
+        "versioning",
+        "jwt",
+        "dotnet"
+      ],
+      "useFor": "Document the employee CRUD API surface and JWT auth requirement."
+    },
+    {
+      "path": "screenshots-output/series-2-dotnet-api/swagger-ai-endpoints.png",
+      "audioPath": "screenshots-output/series-2-dotnet-api/swagger-ai-endpoints.wav",
+      "series": "series-2-dotnet-api",
+      "filename": "swagger-ai-endpoints.png",
+      "capturedAt": "2026-04-22T03:40:08.777Z",
+      "description": "Swagger UI AI controller expanded — POST /ai/chat, POST /ai/hr-insight, POST /ai/nl-employee-search.",
+      "narration": "Series 6 adds an AI controller with three endpoints. The chat endpoint accepts any question. The H R insight endpoint grounds the answer in live workforce data. And the natural language search endpoint parses plain English into structured employee filter parameters.",
+      "articles": [
+        "6.1",
+        "6.2",
+        "6.5"
+      ],
+      "tags": [
+        "swagger",
+        "ai",
+        "chat",
+        "hr-insight",
+        "nl-search",
+        "ollama"
+      ],
+      "useFor": "Show the full AI endpoint surface after enabling the AiEnabled feature flag."
+    },
+    {
+      "path": "screenshots-output/series-2-dotnet-api/swagger-ai-chat-endpoint.png",
+      "audioPath": "screenshots-output/series-2-dotnet-api/swagger-ai-chat-endpoint.wav",
+      "series": "series-2-dotnet-api",
+      "filename": "swagger-ai-chat-endpoint.png",
+      "capturedAt": "2026-04-22T03:40:29.555Z",
+      "description": "Swagger UI POST /api/v1/ai/chat endpoint expanded — shows request body schema with message and systemPrompt fields.",
+      "narration": "The chat endpoint accepts two fields: message is the question to ask, and systemPrompt is an optional instruction that controls the AI's persona or constraints. Both are plain strings — no special formatting required.",
+      "articles": [
+        "6.1"
+      ],
+      "tags": [
+        "swagger",
+        "ai",
+        "chat",
+        "request-body",
+        "system-prompt"
+      ],
+      "useFor": "Illustrate how to test the AI chat endpoint from Swagger in Article 6.1."
+    },
+    {
+      "path": "screenshots-output/series-3-angular-material/dashboard-metrics-charts.png",
+      "audioPath": "screenshots-output/series-3-angular-material/dashboard-metrics-charts.wav",
+      "series": "series-3-angular-material",
+      "filename": "dashboard-metrics-charts.png",
+      "capturedAt": "2026-04-22T03:40:55.796Z",
+      "description": "Dashboard showing KPI metric cards (total employees, departments, new hires) and Chart.js bar/doughnut charts for department and gender distribution.",
+      "narration": "The dashboard displays live workforce metrics as Material Design cards and Chart.js visualisations. The data comes from a single API call to the dashboard metrics endpoint, which aggregates counts across employees, departments, and positions.",
+      "articles": [
+        "3.1",
+        "3.4",
+        "6.4"
+      ],
+      "tags": [
+        "dashboard",
+        "charts",
+        "metrics",
+        "angular-material",
+        "chartjs",
+        "kpi"
+      ],
+      "useFor": "Hero image for dashboard articles; base screenshot for AI insights overlay comparison in Series 6."
+    },
+    {
+      "path": "screenshots-output/series-3-angular-material/employee-list-table.png",
+      "audioPath": "screenshots-output/series-3-angular-material/employee-list-table.wav",
+      "series": "series-3-angular-material",
+      "filename": "employee-list-table.png",
+      "capturedAt": "2026-04-22T03:41:14.961Z",
+      "description": "Angular Material data table listing employees — sortable columns, pagination controls, and a search/filter bar.",
+      "narration": "The employee list uses an Angular Material data table with server-side sorting and pagination. The search bar filters results by name or department without reloading the page.",
+      "articles": [
+        "3.1",
+        "6.5"
+      ],
+      "tags": [
+        "employee-list",
+        "data-table",
+        "pagination",
+        "sorting",
+        "angular-material"
+      ],
+      "useFor": "Illustrate the Material Design data table component and the employee list feature."
+    },
     {
       "path": "screenshots-output/series-3-angular-material/employee-create-form.png",
       "audioPath": "screenshots-output/series-3-angular-material/employee-create-form.wav",
       "series": "series-3-angular-material",
       "filename": "employee-create-form.png",
-      "capturedAt": "2026-04-21T10:23:08.161Z",
+      "capturedAt": "2026-04-22T03:41:38.684Z",
       "description": "Material dialog showing Create Employee reactive form — fields for name, email, department, position, hire date, gender — with inline validation.",
       "narration": "Clicking Create opens a Material dialog with a reactive form. All fields use Angular Material form controls with built-in validation. Errors appear inline as you type, following the Material Design specification.",
       "articles": [
@@ -27,7 +344,7 @@
       "audioPath": "screenshots-output/series-3-angular-material/department-list-table.wav",
       "series": "series-3-angular-material",
       "filename": "department-list-table.png",
-      "capturedAt": "2026-04-21T10:23:29.738Z",
+      "capturedAt": "2026-04-22T03:41:59.872Z",
       "description": "Department management page — Material data table with department names and edit/delete action buttons.",
       "narration": "The department list follows the same Material table pattern as the employee list. Managers can create, edit, and delete departments. The table refreshes automatically after each operation.",
       "articles": [
@@ -46,7 +363,7 @@
       "audioPath": "screenshots-output/series-3-angular-material/position-list-table.wav",
       "series": "series-3-angular-material",
       "filename": "position-list-table.png",
-      "capturedAt": "2026-04-21T10:23:49.468Z",
+      "capturedAt": "2026-04-22T03:42:19.272Z",
       "description": "Position management page — HRAdmin-only table of job positions with title, department, and salary range columns.",
       "narration": "Positions are visible only to the HRAdmin role. The ngx-permissions directive hides this page from Managers and Employees entirely — both in the sidebar and via route guard.",
       "articles": [
@@ -67,7 +384,7 @@
       "audioPath": "screenshots-output/series-3-angular-material/salary-ranges-table.wav",
       "series": "series-3-angular-material",
       "filename": "salary-ranges-table.png",
-      "capturedAt": "2026-04-21T10:24:08.874Z",
+      "capturedAt": "2026-04-22T03:42:38.471Z",
       "description": "Salary Range management page restricted to HRAdmin — table with range label, minimum and maximum salary columns.",
       "narration": "Salary ranges are an HRAdmin-only feature. They define the pay bands that Positions reference, creating a hierarchy from Salary Range down to Position down to Employee.",
       "articles": [
@@ -83,44 +400,136 @@
       "useFor": "Show the HRAdmin-exclusive salary range management feature."
     },
     {
-      "path": "screenshots-output/series-6-ai-app-features/dashboard-ai-insights-card.png",
-      "audioPath": "screenshots-output/series-6-ai-app-features/dashboard-ai-insights-card.wav",
+      "path": "screenshots-output/series-6-ai-app-features/ai-submenu-sidebar.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-submenu-sidebar.wav",
       "series": "series-6-ai-app-features",
-      "filename": "dashboard-ai-insights-card.png",
-      "capturedAt": "2026-04-21T10:24:31.787Z",
-      "description": "Dashboard with AI Insights mat-card at the top — LLM-generated plain-English executive summary of live workforce metrics from Ollama.",
-      "narration": "With AI enabled, the dashboard now opens with an executive summary generated by Ollama. The card appears above the metric cards and automatically refreshes each time the dashboard loads with the latest workforce data.",
+      "filename": "ai-submenu-sidebar.png",
+      "capturedAt": "2026-04-22T03:42:56.200Z",
+      "description": "Dashboard with the AI submenu expanded in the sidebar — shows four child items: AI Assistant, HR Insight, NL Search, Vector Search.",
+      "narration": "The AI section lives in its own collapsible group in the sidebar. Clicking the smart toy icon expands four child pages, each with its own dedicated route.",
       "articles": [
-        "6.4"
+        "6.3"
       ],
       "tags": [
-        "dashboard",
-        "ai-insights",
-        "ollama",
-        "executive-summary",
-        "mat-card"
+        "ai-submenu",
+        "sidebar",
+        "menu-json",
+        "ng-matero",
+        "navigation"
       ],
-      "useFor": "Hero image for Article 6.4; shows AI card in context above the metric cards."
+      "useFor": "Hero image for Article 6.3 showing the submenu structure."
     },
     {
-      "path": "screenshots-output/series-6-ai-app-features/dashboard-ai-insights-card-closeup.png",
-      "audioPath": "screenshots-output/series-6-ai-app-features/dashboard-ai-insights-card-closeup.wav",
+      "path": "screenshots-output/series-6-ai-app-features/ai-assistant-page-full.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-assistant-page-full.wav",
       "series": "series-6-ai-app-features",
-      "filename": "dashboard-ai-insights-card-closeup.png",
-      "capturedAt": "2026-04-21T10:24:47.463Z",
-      "description": "Close-up of the AI Insights mat-card — smart_toy icon, title, and generated executive summary text.",
-      "narration": "The AI insights card uses the smart toy Material icon, a card title, and the generated summary text. The summary is typically three to four sentences and references the actual numbers from the database.",
+      "filename": "ai-assistant-page-full.png",
+      "capturedAt": "2026-04-22T03:43:17.592Z",
+      "description": "Full AI Assistant page at /ai/assistant — chat card with message input when aiEnabled is true, or an info banner when false.",
+      "narration": "The AI Assistant page is one of four pages in the AI submenu. When AI is enabled it shows a chat card with a message input and send button. When disabled, an info banner explains what to enable.",
+      "articles": [
+        "6.3"
+      ],
+      "tags": [
+        "ai-assistant",
+        "chat-ui",
+        "feature-flag",
+        "angular-material"
+      ],
+      "useFor": "Hero image for Article 6.3 showing the AI Assistant page."
+    },
+    {
+      "path": "screenshots-output/series-6-ai-app-features/ai-assistant-empty-state.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-assistant-empty-state.wav",
+      "series": "series-6-ai-app-features",
+      "filename": "ai-assistant-empty-state.png",
+      "capturedAt": "2026-04-22T03:43:39.229Z",
+      "description": "AI Assistant page — empty state before any messages, showing the \"Start a conversation\" prompt.",
+      "narration": "The initial state shows an empty chat card with a prompt to start a conversation. The message input sits at the bottom with a Send button.",
+      "articles": [
+        "6.3"
+      ],
+      "tags": [
+        "ai-assistant",
+        "empty-state",
+        "chat-ui"
+      ],
+      "useFor": "Show the initial state at the start of the Article 6.3 demo."
+    },
+    {
+      "path": "screenshots-output/series-6-ai-app-features/ai-hr-insight-empty.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-hr-insight-empty.wav",
+      "series": "series-6-ai-app-features",
+      "filename": "ai-hr-insight-empty.png",
+      "capturedAt": "2026-04-22T03:43:54.497Z",
+      "description": "HR Insight page at /ai/hr-insight — empty state showing four suggestion buttons and the question input.",
+      "narration": "The H R Insight page shows suggestion buttons for common workforce questions. Clicking one pre-fills the input field.",
+      "articles": [
+        "6.3"
+      ],
+      "tags": [
+        "ai-hr-insight",
+        "suggestion-buttons",
+        "empty-state"
+      ],
+      "useFor": "Show the HR Insight page layout in Article 6.3."
+    },
+    {
+      "path": "screenshots-output/series-6-ai-app-features/ai-hr-insight-with-answer.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-hr-insight-with-answer.wav",
+      "series": "series-6-ai-app-features",
+      "filename": "ai-hr-insight-with-answer.png",
+      "capturedAt": "2026-04-22T03:44:38.430Z",
+      "description": "HR Insight page showing a data-grounded Ollama answer — references live department headcounts. Execution time shown below reply.",
+      "narration": "The H R Insight answer references real numbers from the database. The execution time shown below the reply includes both the database query and Ollama inference time.",
+      "articles": [
+        "6.2",
+        "6.3"
+      ],
+      "tags": [
+        "ai-hr-insight",
+        "rag",
+        "grounded-answer",
+        "execution-time",
+        "ollama"
+      ],
+      "useFor": "Key proof-of-concept image for Articles 6.2 and 6.3."
+    },
+    {
+      "path": "screenshots-output/series-6-ai-app-features/ai-nl-search-empty.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-nl-search-empty.wav",
+      "series": "series-6-ai-app-features",
+      "filename": "ai-nl-search-empty.png",
+      "capturedAt": "2026-04-22T03:44:53.537Z",
+      "description": "Natural Language Search page at /ai/nl-search — empty state with search input and prompt to type a query.",
+      "narration": "The NL Search page shows a single text input. Type a plain-English description of the employees you are looking for.",
       "articles": [
         "6.4"
       ],
       "tags": [
-        "dashboard",
-        "ai-insights",
-        "mat-card",
-        "closeup",
-        "smart-toy-icon"
+        "ai-nl-search",
+        "empty-state",
+        "natural-language"
       ],
-      "useFor": "Inline image for the Article 6.4 step-by-step walkthrough showing the finished card."
+      "useFor": "Show the initial NL Search state in Article 6.4."
+    },
+    {
+      "path": "screenshots-output/series-6-ai-app-features/ai-vector-search-empty.png",
+      "audioPath": "screenshots-output/series-6-ai-app-features/ai-vector-search-empty.wav",
+      "series": "series-6-ai-app-features",
+      "filename": "ai-vector-search-empty.png",
+      "capturedAt": "2026-04-22T03:45:08.808Z",
+      "description": "Vector Search page at /ai/vector-search — empty state with search input and prompt to describe a position.",
+      "narration": "The Vector Search page uses semantic similarity to find positions. Describe what you are looking for in plain English.",
+      "articles": [
+        "6.5"
+      ],
+      "tags": [
+        "ai-vector-search",
+        "empty-state",
+        "semantic-search"
+      ],
+      "useFor": "Show the initial Vector Search state in Article 6.5."
     }
   ]
 }
