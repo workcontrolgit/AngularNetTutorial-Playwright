@@ -13,7 +13,7 @@
  * Output:
  *   ../../../../docs/images/series-x/filename.png    ← screenshot (repo root docs folder)
  *   ../../../../docs/images/series-x/filename.wav    ← narration audio (Windows only)
- *   screenshot-catalog.json                          ← machine-readable index
+ *   ../../../../docs/images/screenshot-catalog.json    ← machine-readable index
  *
  * Prerequisites:
  *   - Angular:        http://localhost:4200
@@ -64,7 +64,7 @@ interface Catalog {
 // ---------------------------------------------------------------------------
 
 const OUTPUT_ROOT  = path.join(__dirname, '..', '..', '..', '..', 'docs', 'images');
-const CATALOG_PATH = path.join(__dirname, '..', '..', 'screenshot-catalog.json');
+const CATALOG_PATH = path.join(__dirname, '..', '..', '..', '..', 'docs', 'images', 'screenshot-catalog.json');
 const SPEAK_SCRIPT = path.join(__dirname, '..', '..', 'scripts', 'speak.ps1');
 
 // Set SCREENSHOTS_VOICE env var to choose a Windows TTS voice, e.g:
