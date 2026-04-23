@@ -3,7 +3,7 @@
  *
  * Captures key UI states from the TalentManagement app for use in blog posts
  * and documentation. Each screenshot:
- *   - Is saved as a PNG in screenshots-output/{series}/
+ *   - Is saved as a PNG in {repo-root}/docs/screenshots/{series}/
  *   - Gets a matching WAV narration file in the same folder (Windows TTS via speak.ps1)
  *   - Is registered in screenshot-catalog.json for AI-assisted blog writing
  *
@@ -11,9 +11,9 @@
  *   npx playwright test --project=screenshots
  *
  * Output:
- *   screenshots-output/series-x/filename.png    ← screenshot
- *   screenshots-output/series-x/filename.wav    ← narration audio (Windows only)
- *   screenshot-catalog.json                     ← machine-readable index
+ *   ../../../../docs/screenshots/series-x/filename.png    ← screenshot (repo root docs folder)
+ *   ../../../../docs/screenshots/series-x/filename.wav    ← narration audio (Windows only)
+ *   ../../../../docs/screenshots/screenshot-catalog.json    ← machine-readable index
  *
  * Prerequisites:
  *   - Angular:        http://localhost:4200
@@ -63,8 +63,8 @@ interface Catalog {
 // Config
 // ---------------------------------------------------------------------------
 
-const OUTPUT_ROOT  = path.join(__dirname, '..', '..', 'screenshots-output');
-const CATALOG_PATH = path.join(__dirname, '..', '..', 'screenshot-catalog.json');
+const OUTPUT_ROOT  = path.join(__dirname, '..', '..', '..', '..', 'docs', 'screenshots');
+const CATALOG_PATH = path.join(__dirname, '..', '..', '..', '..', 'docs', 'screenshots', 'screenshot-catalog.json');
 const SPEAK_SCRIPT = path.join(__dirname, '..', '..', 'scripts', 'speak.ps1');
 
 // Set SCREENSHOTS_VOICE env var to choose a Windows TTS voice, e.g:
@@ -146,8 +146,8 @@ async function shot(
   generateAudio(meta.narration, wavPath);
 
   // 3. Upsert catalog entry
-  const relativePng  = `screenshots-output/${series}/${filename}`;
-  const relativeWav  = `screenshots-output/${series}/${baseName}.wav`;
+  const relativePng  = `docs/screenshots/${series}/${filename}`;
+  const relativeWav  = `docs/screenshots/${series}/${baseName}.wav`;
 
   catalog.screenshots = catalog.screenshots.filter(
     e => !(e.series === series && e.filename === filename)
