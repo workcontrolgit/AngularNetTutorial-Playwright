@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { AiAssistantPage } from '../../page-objects/ai-assistant.page';
 
 /**
@@ -14,9 +13,7 @@ import { AiAssistantPage } from '../../page-objects/ai-assistant.page';
  */
 
 test.describe('AI Assistant Page', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load the AI Assistant page without errors', async ({ page }) => {
     const aiPage = new AiAssistantPage(page);

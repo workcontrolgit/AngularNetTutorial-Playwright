@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * ARIA Labels Tests
@@ -12,17 +11,9 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('ARIA Labels', () => {
-  let authFailed = false;
+  test.use({ storageState: '.auth/manager.json' });
 
-  test.beforeEach(async ({ page }) => {
-    try {
-      await loginAsRole(page, 'manager');
-      authFailed = false;
-    } catch (error) {
-      authFailed = true;
-      console.log('Authentication failed - IdentityServer may not be running. Tests will be skipped.');
-    }
-  });
+  let authFailed = false;
 
   test('should have ARIA labels on form fields', async ({ page }) => {
     if (authFailed) test.skip();

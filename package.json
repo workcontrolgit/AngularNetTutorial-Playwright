@@ -2,13 +2,25 @@
   "name": "angularnettutorial-playwright",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "cross-env APP_ENV=dev playwright test",
+    "test:prod": "cross-env APP_ENV=prod playwright test",
+    "test:ui": "cross-env APP_ENV=dev playwright test --ui",
+    "test:headed": "cross-env APP_ENV=dev playwright test --headed",
+    "test:smoke": "cross-env APP_ENV=dev playwright test --project=smoke",
+    "test:smoke:prod": "cross-env APP_ENV=prod playwright test --project=smoke",
+    "setup:env": "npx ts-node scripts/fetch-secrets.ts",
+    "report": "playwright show-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@playwright/test": "1.59.1",
-    "@types/node": "^25.2.2"
+    "@types/node": "^25.2.2",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2"
   }
 }

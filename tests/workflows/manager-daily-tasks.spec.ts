@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { loginAsRole, logout, isAuthenticated } from '../../fixtures/auth.fixtures';
 import { createEmployeeData, createDepartmentData } from '../../fixtures/data.fixtures';
 import { EmployeeFormPage } from '../../page-objects/employee-form.page';
+import { getAngularUrlPattern } from '../../config/test-config';
 
 /**
  * Manager Daily Tasks Workflow Test
@@ -214,7 +215,7 @@ test.describe('Manager Daily Tasks Workflow', () => {
     await logout(page);
 
     // After logout, should be back on Angular app as Guest/Anonymous
-    expect(page.url()).toMatch(/localhost:4200/);
+    expect(page.url()).toMatch(getAngularUrlPattern());
 
     // Verify user is no longer authenticated
     const authenticated = await isAuthenticated(page);

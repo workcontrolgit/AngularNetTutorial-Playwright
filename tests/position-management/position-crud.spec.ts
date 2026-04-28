@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { createPositionData } from '../../fixtures/data.fixtures';
 import { PositionListPage } from '../../page-objects/position-list.page';
 import { PositionFormPage } from '../../page-objects/position-form.page';
@@ -16,8 +15,9 @@ import { PositionFormPage } from '../../page-objects/position-form.page';
  */
 
 test.describe('Position CRUD (HRAdmin Only)', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'hradmin');
     const list = new PositionListPage(page);
     await list.goto();
   });

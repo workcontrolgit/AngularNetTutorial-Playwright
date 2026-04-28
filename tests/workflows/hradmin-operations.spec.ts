@@ -3,6 +3,7 @@ import { loginAsRole, logout, isAuthenticated } from '../../fixtures/auth.fixtur
 import { createSalaryRangeData, createPositionData, createEmployeeData } from '../../fixtures/data.fixtures';
 import { PositionFormPage } from '../../page-objects/position-form.page';
 import { EmployeeFormPage } from '../../page-objects/employee-form.page';
+import { getAngularUrlPattern } from '../../config/test-config';
 
 /**
  * HRAdmin Operations Workflow Test
@@ -192,7 +193,7 @@ test.describe('HRAdmin Operations Workflow', () => {
     await logout(page);
 
     // After logout, should be back on Angular app as Guest/Anonymous
-    expect(page.url()).toMatch(/localhost:4200/);
+    expect(page.url()).toMatch(getAngularUrlPattern());
 
     // Verify user is no longer authenticated
     const authenticated = await isAuthenticated(page);

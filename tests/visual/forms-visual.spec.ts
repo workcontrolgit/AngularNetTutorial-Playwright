@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
 
 /**
@@ -18,9 +17,7 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
  */
 
 test.describe('Forms Visual Regression', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test.skip('should match employee form baseline', async ({ page }) => {
     await page.goto('/employees');

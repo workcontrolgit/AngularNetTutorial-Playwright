@@ -1,5 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { getApiToken } from '../fixtures/api.fixtures';
+import { TEST_USERS } from '../config/test-config';
 
 /**
  * Token Manager Utility
@@ -21,11 +22,11 @@ interface TokenCache {
 // In-memory token cache
 const tokenCache: TokenCache = {};
 
-// Role to credentials mapping
+// Role to credentials mapping — sourced from env vars via TEST_USERS
 const roleCredentials: { [role: string]: { username: string; password: string } } = {
-  employee: { username: 'employee1', password: 'Pa$word123' },
-  manager: { username: 'ashtyn1', password: 'Pa$word123' },
-  hradmin: { username: 'admin1', password: 'Pa$word123' },
+  employee: { username: TEST_USERS.employee.username, password: TEST_USERS.employee.password },
+  manager:  { username: TEST_USERS.manager.username,  password: TEST_USERS.manager.password  },
+  hradmin:  { username: TEST_USERS.hradmin.username,  password: TEST_USERS.hradmin.password  },
 };
 
 /**

@@ -19,8 +19,9 @@ import { SalaryRangeFormPage } from '../../page-objects/salary-range-form.page';
  */
 
 test.describe('Salary Range CRUD', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'hradmin');
     const list = new SalaryRangeListPage(page);
     await list.goto();
   });

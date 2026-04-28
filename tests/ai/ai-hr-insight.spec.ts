@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { AiHrInsightPage } from '../../page-objects/ai-hr-insight.page';
 
 /**
@@ -13,9 +12,7 @@ import { AiHrInsightPage } from '../../page-objects/ai-hr-insight.page';
  */
 
 test.describe('AI HR Insight Page', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load the HR Insight page without errors', async ({ page }) => {
     const hrPage = new AiHrInsightPage(page);

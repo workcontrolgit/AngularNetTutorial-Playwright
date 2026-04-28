@@ -391,7 +391,7 @@ test.describe('Authentication API', () => {
  * This works when IdentityServer password grant is not configured for programmatic access
  */
 test.describe('API Authentication via Profile Page', () => {
-  const baseURL = 'https://localhost:44378/api/v1';
+  const baseURL = APP_URLS.api;
 
   test.beforeEach(async ({ page }) => {
     // Try to detect if IdentityServer is available

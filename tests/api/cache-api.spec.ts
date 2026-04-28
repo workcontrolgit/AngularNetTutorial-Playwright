@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { getTokenForRole } from '../../fixtures/api.fixtures';
+import { APP_URLS } from '../../config/test-config';
 
 /**
  * Cache API Tests
@@ -18,7 +19,7 @@ let authToken: string | null = null;
 let authFailed = false;
 
 test.describe('Cache API', () => {
-  const baseURL = 'https://localhost:44378/api/v1';
+  const baseURL = APP_URLS.api;
 
   test.beforeAll(async ({ request }) => {
     // Try to get authentication token with timeout

@@ -1,8 +1,6 @@
 {
   "employee": {
     "username": "antoinette16",
-    "password": "Pa$$word123",
-    "email": "antoinette16@ethereal.email",
     "role": "Employee",
     "roles": ["Employee"],
     "permissions": ["read"],
@@ -13,8 +11,6 @@
   },
   "manager": {
     "username": "rosamond33",
-    "password": "Pa$$word123",
-    "email": "rosamond33@ethereal.email",
     "role": "Manager",
     "roles": ["Employee", "Manager"],
     "permissions": ["read", "write"],
@@ -26,8 +22,6 @@
   },
   "hradmin": {
     "username": "ashtyn1",
-    "password": "Pa$$word123",
-    "email": "ashtyn1@ethereal.email",
     "role": "HRAdmin",
     "roles": ["Employee", "Manager", "HRAdmin"],
     "permissions": ["read", "write", "delete", "admin"],

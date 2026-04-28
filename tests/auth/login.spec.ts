@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, loginAsRole, isAuthenticated, getStoredToken, clearAuthTokens, logout } from '../../fixtures/auth.fixtures';
+import { getAngularUrlPattern } from '../../config/test-config';
 
 /**
  * Authentication Tests - Login Flow
@@ -61,7 +62,7 @@ test.describe('Login Flow', () => {
     await loginAs(page, 'ashtyn1', 'Pa$$word123');
 
     // Verify successful redirect back to Angular
-    await expect(page).toHaveURL(/localhost:4200/);
+    await expect(page).toHaveURL(getAngularUrlPattern());
 
     // Verify dashboard is visible (indicating authenticated state)
     await expect(page.locator('h1:has-text("Dashboard")')).toBeVisible();
@@ -81,7 +82,7 @@ test.describe('Login Flow', () => {
     await loginAs(page, 'ashtyn1', 'Pa$$word123');
 
     // Wait for authentication to complete
-    await page.waitForURL(/localhost:4200/);
+    await page.waitForURL(getAngularUrlPattern());
     await page.waitForTimeout(2000); // Allow time for token storage
 
     // Check if token is stored (may be in localStorage or sessionStorage)

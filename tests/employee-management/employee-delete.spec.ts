@@ -15,9 +15,9 @@ import { createEmployee, getTokenForRole, deleteEmployee } from '../../fixtures/
  */
 
 test.describe('Employee Delete', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    // Login as HRAdmin (has delete permission)
-    await loginAsRole(page, 'hradmin');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
   });

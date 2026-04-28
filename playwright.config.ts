@@ -2,12 +2,19 @@ import { defineConfig, devices } from '@playwright/test';
 import { APP_URLS, TIMEOUTS, VIEWPORTS } from './config/test-config';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Load environment-specific credentials and URLs.
+ *
+ * Select environment with APP_ENV:
+ *   APP_ENV=dev   → .env.dev   (local development, default)
+ *   APP_ENV=prod  → .env.prod  (production)
+ *   (none)        → .env       (CI injects via GitHub Secrets / no file needed)
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+import dotenv from 'dotenv';
+import path from 'path';
+
+const env = process.env.APP_ENV;
+const envFile = env ? `.env.${env}` : '.env';
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 /**
  * Playwright Configuration for AngularNetTutorial Testing

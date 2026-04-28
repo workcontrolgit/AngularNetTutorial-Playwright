@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Load Time Performance Tests
@@ -12,9 +11,7 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Load Time Performance', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load dashboard in under 2 seconds', async ({ page }) => {
     const startTime = Date.now();

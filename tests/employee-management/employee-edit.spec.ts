@@ -14,9 +14,9 @@ import { EmployeeFormPage } from '../../page-objects/employee-form.page';
  */
 
 test.describe('Employee Edit', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    // Login as HRAdmin (has full edit permission)
-    await loginAsRole(page, 'hradmin');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
   });

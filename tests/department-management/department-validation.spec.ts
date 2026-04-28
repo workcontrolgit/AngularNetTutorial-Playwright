@@ -23,8 +23,9 @@ import { DepartmentFormPage } from '../../page-objects/department-form.page';
 const MAT_ERROR = 'mat-error, .mat-mdc-form-field-error, .mat-error';
 
 test.describe('Department Validation', () => {
+  test.use({ storageState: '.auth/manager.json' });
+
   test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
     const list = new DepartmentListPage(page);
     await list.goto();
   });

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { getTokenForRole } from '../../fixtures/api.fixtures';
 import { createDepartmentData } from '../../fixtures/data.fixtures';
+import { APP_URLS } from '../../config/test-config';
 
 /**
  * Department API Tests
@@ -17,7 +18,7 @@ let authToken: string | null = null;
 let authFailed = false;
 
 test.describe('Department API', () => {
-  const baseURL = 'https://localhost:44378/api/v1';
+  const baseURL = APP_URLS.api;
   let testDepartmentId: number;
 
   test.beforeAll(async ({ request }) => {

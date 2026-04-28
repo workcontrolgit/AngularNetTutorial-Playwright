@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Network Error Handling Tests
@@ -13,9 +12,7 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Network Error Handling', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should handle API timeout gracefully', async ({ page }) => {
     // Set very short timeout to simulate timeout

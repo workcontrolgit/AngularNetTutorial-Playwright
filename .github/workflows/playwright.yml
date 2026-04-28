@@ -34,10 +34,27 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps ${{ matrix.project }}
 
+      - name: Run auth setup (pre-authenticate all roles via PKCE)
+        run: npx playwright test --project=setup
+        env:
+          CI: true
+          TEST_USER_EMPLOYEE_USERNAME: ${{ secrets.TEST_USER_EMPLOYEE_USERNAME }}
+          TEST_USER_EMPLOYEE_PASSWORD: ${{ secrets.TEST_USER_EMPLOYEE_PASSWORD }}
+          TEST_USER_MANAGER_USERNAME: ${{ secrets.TEST_USER_MANAGER_USERNAME }}
+          TEST_USER_MANAGER_PASSWORD: ${{ secrets.TEST_USER_MANAGER_PASSWORD }}
+          TEST_USER_HRADMIN_USERNAME: ${{ secrets.TEST_USER_HRADMIN_USERNAME }}
+          TEST_USER_HRADMIN_PASSWORD: ${{ secrets.TEST_USER_HRADMIN_PASSWORD }}
+
       - name: Run Playwright tests
         run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: true
+          TEST_USER_EMPLOYEE_USERNAME: ${{ secrets.TEST_USER_EMPLOYEE_USERNAME }}
+          TEST_USER_EMPLOYEE_PASSWORD: ${{ secrets.TEST_USER_EMPLOYEE_PASSWORD }}
+          TEST_USER_MANAGER_USERNAME: ${{ secrets.TEST_USER_MANAGER_USERNAME }}
+          TEST_USER_MANAGER_PASSWORD: ${{ secrets.TEST_USER_MANAGER_PASSWORD }}
+          TEST_USER_HRADMIN_USERNAME: ${{ secrets.TEST_USER_HRADMIN_USERNAME }}
+          TEST_USER_HRADMIN_PASSWORD: ${{ secrets.TEST_USER_HRADMIN_PASSWORD }}
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4

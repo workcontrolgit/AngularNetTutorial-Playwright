@@ -14,12 +14,7 @@ import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Dashboard Metrics', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login as Manager (has dashboard access)
-    await loginAsRole(page, 'manager');
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load dashboard successfully', async ({ page }) => {
     // Verify dashboard page loads

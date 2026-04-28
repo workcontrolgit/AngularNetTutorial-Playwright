@@ -12,12 +12,7 @@ import { loginAsRole, logout } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Dashboard Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login as Manager (has create permissions)
-    await loginAsRole(page, 'manager');
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should navigate to employee list from dashboard', async ({ page }) => {
     // Use sidebar navigation to employees

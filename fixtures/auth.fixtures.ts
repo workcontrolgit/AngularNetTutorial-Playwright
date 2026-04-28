@@ -1,6 +1,5 @@
-import { Page, APIRequestContext } from '@playwright/test';
-import testUsers from '../config/test-users.json';
-import { APP_URLS } from '../config/test-config';
+import { Page } from '@playwright/test';
+import { APP_URLS, TEST_USERS } from '../config/test-config';
 
 /**
  * Authentication Fixtures
@@ -30,22 +29,30 @@ export async function loginAs(
 ): Promise<void> {
   // Navigate to Angular app (loads as Guest/Anonymous)
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+
+  // Wait for Angular to fully render its shell before checking auth state.
+  // The sidebar user panel (h4 heading) is rendered by Angular change detection
+  // which runs after domcontentloaded — we must wait for it explicitly.
+  await page.waitForSelector('h4, mat-sidenav-container, .matero-sidenav', { timeout: 15000 });
 
   // If we're already authenticated for some reason, log out first
   if (await isAuthenticated(page)) {
     // the logout helper already waits for navigation etc.
     await logout(page);
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForSelector('h4, mat-sidenav-container, .matero-sidenav', { timeout: 15000 });
   }
 
-  // Clear any existing auth tokens to ensure clean state
+  // Clear any existing auth tokens AND all cookies (including IdentityServer session
+  // cookies) to ensure a clean login state. Without clearing IS session cookies,
+  // the next authorization request will auto-login as the previously authenticated
+  // user instead of showing the login form.
   await clearAuthTokens(page);
+  await page.context().clearCookies();
 
   // Reload page after clearing tokens to ensure Guest state
   await page.reload();
-  await page.waitForLoadState('networkidle');
+  await page.waitForSelector('h4, mat-sidenav-container, .matero-sidenav', { timeout: 15000 });
 
   // Pause briefly to allow Angular to render guest UI
   await page.waitForTimeout(1000);
@@ -110,7 +117,8 @@ export async function loginAs(
   await page.click('button:has-text("Login")');
 
   // Wait for OAuth callback redirect back to Angular app
-  await page.waitForURL(/localhost:4200.*/, { timeout: 30000 });
+  const angularHost = new URL(APP_URLS.angular).host.replace(/\./g, '\\.');
+  await page.waitForURL(new RegExp(`${angularHost}.*`), { timeout: 30000 });
 
   // Wait for dashboard to load (indicating successful authentication)
   await page.waitForSelector(
@@ -133,73 +141,11 @@ export async function loginAsRole(
   page: Page,
   role: 'employee' | 'manager' | 'hradmin'
 ): Promise<void> {
-  const user = testUsers[role];
+  const user = TEST_USERS[role];
   if (!user) {
     throw new Error(`Unknown role: ${role}`);
   }
   await loginAs(page, user.username, user.password);
-}
-
-/**
- * Acquires an API access token from IdentityServer
- *
- * @param request - Playwright APIRequestContext
- * @param username - Username for token request
- * @param password - Password for token request
- * @returns Promise resolving to access token string
- *
- * @example
- * const token = await getApiToken(request, 'ashtyn1', 'Pa$$word123');
- * const response = await request.get('/api/v1/employees', {
- *   headers: { Authorization: `Bearer ${token}` }
- * });
- */
-export async function getApiToken(
-  request: APIRequestContext,
-  username: string,
-  password: string
-): Promise<string> {
-  const tokenEndpoint = `${APP_URLS.identityServer}/connect/token`;
-
-  const response = await request.post(tokenEndpoint, {
-    form: {
-      grant_type: 'password',
-      client_id: 'TalentManagement',
-      client_secret: 'secret', // Note: Update with actual client secret
-      scope: 'openid profile email roles app.api.talentmanagement.read app.api.talentmanagement.write',
-      username: username,
-      password: password,
-    },
-    ignoreHTTPSErrors: true,
-  });
-
-  if (!response.ok()) {
-    throw new Error(`Failed to get token: ${response.status()} ${response.statusText()}`);
-  }
-
-  const data = await response.json();
-  return data.access_token;
-}
-
-/**
- * Acquires an API token using a predefined test user role
- *
- * @param request - Playwright APIRequestContext
- * @param role - User role: 'employee' | 'manager' | 'hradmin'
- * @returns Promise resolving to access token string
- *
- * @example
- * const token = await getTokenForRole(request, 'manager');
- */
-export async function getTokenForRole(
-  request: APIRequestContext,
-  role: 'employee' | 'manager' | 'hradmin'
-): Promise<string> {
-  const user = testUsers[role];
-  if (!user) {
-    throw new Error(`Unknown role: ${role}`);
-  }
-  return await getApiToken(request, user.username, user.password);
 }
 
 /**
@@ -212,6 +158,14 @@ export async function getTokenForRole(
  * await logout(page);
  */
 export async function logout(page: Page): Promise<void> {
+  // Wait for Angular to render before checking auth state
+  await page.waitForSelector('h4, mat-sidenav-container, .matero-sidenav', { timeout: 10000 }).catch(() => {});
+
+  // If already in Guest state, nothing to logout from — return early
+  if (!(await isAuthenticated(page))) {
+    return;
+  }
+
   // Click user icon in upper right corner (same as login flow)
   const userIcon = page.locator('button[aria-label="User menu"], button mat-icon:has-text("account_circle"), header button:has(mat-icon)').last();
   await userIcon.click();
@@ -224,7 +178,8 @@ export async function logout(page: Page): Promise<void> {
   // Wait for redirect to logout page. Depending on environment this may go to
   // the configured identity server host or local /Account/Logout.
   const idHost = new URL(APP_URLS.identityServer).host.replace(/\./g, '\\.');
-  const logoutRegex = new RegExp(`(${idHost}.*|localhost\/Account\/Logout.*)`);
+  const angularHostLogoutPage = new URL(APP_URLS.angular).host.replace(/\./g, '\\.');
+  const logoutRegex = new RegExp(`(${idHost}.*|${angularHostLogoutPage}\/Account\/Logout.*)`);
   try {
     await page.waitForURL(logoutRegex, { timeout: 15000 });
   } catch (err) {
@@ -237,7 +192,8 @@ export async function logout(page: Page): Promise<void> {
 
   // Look for the "click here" link to return to Angular
   // Try multiple possible selectors for the return link
-  const returnLink = page.locator('a:has-text("click here"), a:has-text("return"), a:has-text("back to"), a[href*="localhost:4200"]').first();
+  const angularUrl = APP_URLS.angular;
+  const returnLink = page.locator(`a:has-text("click here"), a:has-text("return"), a:has-text("back to"), a[href*="${angularUrl}"]`).first();
 
   // Check if return link exists and click it
   const linkExists = await returnLink.isVisible({ timeout: 5000 }).catch(() => false);
@@ -245,14 +201,15 @@ export async function logout(page: Page): Promise<void> {
     await returnLink.click();
 
     // Wait for redirect back to Angular
-    await page.waitForURL(/localhost:4200.*/, { timeout: 10000 });
+    const angularHostLogout = new URL(APP_URLS.angular).host.replace(/\./g, '\\.');
+    await page.waitForURL(new RegExp(`${angularHostLogout}.*`), { timeout: 10000 });
   } else {
     // If no return link found, just navigate back to Angular
     await page.goto('/');
   }
 
   // Wait for page to settle
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1000);
 
   // Clear all auth tokens to ensure complete logout
@@ -322,7 +279,7 @@ export async function getTokenFromProfile(page: Page): Promise<string | null> {
     await profileOption.click();
 
     // Wait for profile page to load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
 
     // Click on "Access Token" tab (ID Token tab is selected by default)

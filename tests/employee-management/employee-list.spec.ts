@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Employee List Tests
@@ -13,9 +12,9 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Employee List', () => {
+  test.use({ storageState: '.auth/manager.json' });
+
   test.beforeEach(async ({ page }) => {
-    // Login as Manager
-    await loginAsRole(page, 'manager');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
   });

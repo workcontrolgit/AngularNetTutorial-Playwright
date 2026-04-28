@@ -6,6 +6,66 @@
  */
 
 /**
+ * Load environment-specific credentials before any constant is evaluated.
+ *
+ * Placing dotenv loading here (rather than only in playwright.config.ts) ensures
+ * that worker processes which import this module directly also pick up the .env
+ * file, because module imports in playwright.config.ts are evaluated before the
+ * dotenv.config() call in that file executes.
+ *
+ * Select environment with APP_ENV:
+ *   APP_ENV=dev   → .env.dev   (local development)
+ *   APP_ENV=prod  → .env.prod  (production)
+ *   (none)        → .env       (default)
+ */
+import dotenv from 'dotenv';
+import path from 'path';
+
+const _env = process.env.APP_ENV;
+const _envFile = _env ? `.env.${_env}` : '.env';
+dotenv.config({ path: path.resolve(__dirname, '..', _envFile) });
+
+/**
+ * Test User Credentials
+ *
+ * Loaded from environment variables — never hardcoded.
+ * Local dev: copy .env.example to .env and fill in values.
+ * CI: injected automatically via GitHub Secrets.
+ */
+export const TEST_USERS = {
+  employee: {
+    username: process.env.TEST_USER_EMPLOYEE_USERNAME || '',
+    password: process.env.TEST_USER_EMPLOYEE_PASSWORD || '',
+    role: 'employee' as const,
+  },
+  manager: {
+    username: process.env.TEST_USER_MANAGER_USERNAME || '',
+    password: process.env.TEST_USER_MANAGER_PASSWORD || '',
+    role: 'manager' as const,
+  },
+  hradmin: {
+    username: process.env.TEST_USER_HRADMIN_USERNAME || '',
+    password: process.env.TEST_USER_HRADMIN_PASSWORD || '',
+    role: 'hradmin' as const,
+  },
+} as const;
+
+/**
+ * Fail fast if credentials are missing — prevents cryptic login failures.
+ */
+export function assertCredentialsLoaded(): void {
+  const missing = (Object.entries(TEST_USERS) as [string, { username: string; password: string }][])
+    .filter(([, u]) => !u.username || !u.password)
+    .map(([role]) => role);
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing credentials for roles: ${missing.join(', ')}. ` +
+      `Copy .env.example to .env and fill in values, or set GitHub Secrets for CI.`
+    );
+  }
+}
+
+/**
  * Application URLs
  */
 export const APP_URLS = {
@@ -191,4 +251,17 @@ export function getUrl(path: string): string {
  */
 export function getApiUrl(endpoint: string): string {
   return `${APP_URLS.api}${endpoint}`;
+}
+
+/**
+ * Returns a RegExp that matches any URL on the Angular app host.
+ * Use instead of hardcoded /localhost:4200/ so tests work across environments.
+ *
+ * @example
+ * await expect(page).toHaveURL(getAngularUrlPattern());
+ * await page.waitForURL(getAngularUrlPattern());
+ */
+export function getAngularUrlPattern(): RegExp {
+  const host = new URL(APP_URLS.angular).host.replace(/\./g, '\\.');
+  return new RegExp(host);
 }

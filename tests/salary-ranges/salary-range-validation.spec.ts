@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { SalaryRangeListPage } from '../../page-objects/salary-range-list.page';
 import { SalaryRangeFormPage } from '../../page-objects/salary-range-form.page';
 
@@ -20,8 +19,9 @@ import { SalaryRangeFormPage } from '../../page-objects/salary-range-form.page';
 const MAT_ERROR = 'mat-error, .mat-mdc-form-field-error, .mat-error';
 
 test.describe('Salary Range Validation', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'hradmin');
     const list = new SalaryRangeListPage(page);
     await list.goto();
   });

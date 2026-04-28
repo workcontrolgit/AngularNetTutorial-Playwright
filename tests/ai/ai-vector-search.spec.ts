@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { AiVectorSearchPage } from '../../page-objects/ai-vector-search.page';
 
 /**
@@ -14,9 +13,7 @@ import { AiVectorSearchPage } from '../../page-objects/ai-vector-search.page';
  */
 
 test.describe('AI Vector Search Page', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load the Vector Search page without errors', async ({ page }) => {
     const vsPage = new AiVectorSearchPage(page);

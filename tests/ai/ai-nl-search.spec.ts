@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { AiNlSearchPage } from '../../page-objects/ai-nl-search.page';
 
 /**
@@ -14,9 +13,7 @@ import { AiNlSearchPage } from '../../page-objects/ai-nl-search.page';
  */
 
 test.describe('AI NL Search Page', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should load the NL Search page without errors', async ({ page }) => {
     const nlPage = new AiNlSearchPage(page);

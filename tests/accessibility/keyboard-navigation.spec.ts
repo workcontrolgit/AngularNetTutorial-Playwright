@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { EmployeeFormPage } from '../../page-objects/employee-form.page';
 
 /**
@@ -13,17 +12,9 @@ import { EmployeeFormPage } from '../../page-objects/employee-form.page';
  */
 
 test.describe('Keyboard Navigation', () => {
-  let authFailed = false;
+  test.use({ storageState: '.auth/manager.json' });
 
-  test.beforeEach(async ({ page }) => {
-    try {
-      await loginAsRole(page, 'manager');
-      authFailed = false;
-    } catch (error) {
-      authFailed = true;
-      console.log('Authentication failed - IdentityServer may not be running. Tests will be skipped.');
-    }
-  });
+  let authFailed = false;
 
   test('should navigate through form using Tab key', async ({ page }) => {
     if (authFailed) test.skip();

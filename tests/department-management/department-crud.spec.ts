@@ -16,9 +16,9 @@ import { DepartmentFormPage } from '../../page-objects/department-form.page';
  */
 
 test.describe('Department CRUD', () => {
+  test.use({ storageState: '.auth/manager.json' });
+
   test.beforeEach(async ({ page }) => {
-    // Login as Manager (has create/edit permission)
-    await loginAsRole(page, 'manager');
     const list = new DepartmentListPage(page);
     await list.goto();
   });

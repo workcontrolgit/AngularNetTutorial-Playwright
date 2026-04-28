@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Large Datasets Performance Tests
@@ -11,9 +10,7 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Large Datasets Performance', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should handle pagination with large dataset', async ({ page }) => {
     await page.goto('/employees');

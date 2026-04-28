@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { APP_URLS } from '../config/test-config';
+import { APP_URLS, getAngularUrlPattern } from '../config/test-config';
 
 test('Diagnostic: Check Angular app behavior', async ({ page }) => {
   console.log('\n=== DIAGNOSTIC TEST ===');
 
   // Navigate to Angular
-  await page.goto('http://localhost:4200');
+  await page.goto(APP_URLS.angular);
   await page.waitForTimeout(3000);
 
   const currentUrl = page.url();
@@ -15,7 +15,7 @@ test('Diagnostic: Check Angular app behavior', async ({ page }) => {
   const idHost = new URL(APP_URLS.identityServer).host;
   if (currentUrl.includes(idHost)) {
     console.log('✅ Redirected to IdentityServer (AUTH ENABLED)');
-  } else if (currentUrl.includes('localhost:4200')) {
+  } else if (currentUrl.includes(new URL(APP_URLS.angular).host)) {
     console.log('❌ Stayed on Angular app (AUTH DISABLED)');
   }
 

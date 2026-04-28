@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * AI Submenu Navigation Tests
@@ -12,11 +11,7 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('AI Submenu Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should navigate directly to /ai/assistant', async ({ page }) => {
     await page.goto('/ai/assistant');

@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
 
 /**
@@ -27,9 +26,7 @@ import { VISUAL_THRESHOLDS, TIMEOUTS } from '../../config/test-config';
  */
 
 test.describe('Dashboard Visual Regression', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should match dashboard baseline screenshot', async ({ page }) => {
     await page.goto('/dashboard');

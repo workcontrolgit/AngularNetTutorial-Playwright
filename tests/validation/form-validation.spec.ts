@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAsRole } from '../../fixtures/auth.fixtures';
 
 /**
  * Form Validation Edge Cases Tests
@@ -15,10 +14,7 @@ import { loginAsRole } from '../../fixtures/auth.fixtures';
  */
 
 test.describe('Form Validation Edge Cases', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login as Manager (has create permissions)
-    await loginAsRole(page, 'manager');
-  });
+  test.use({ storageState: '.auth/manager.json' });
 
   test('should validate max length for text fields', async ({ page }) => {
     await page.goto('/employees');

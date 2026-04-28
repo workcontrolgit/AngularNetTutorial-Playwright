@@ -14,9 +14,9 @@ import { EmployeeFormPage } from '../../page-objects/employee-form.page';
  */
 
 test.describe('Employee Create', () => {
+  test.use({ storageState: '.auth/hradmin.json' });
+
   test.beforeEach(async ({ page }) => {
-    // Login as HRAdmin (only HRAdmin can create)
-    await loginAsRole(page, 'hradmin');
     await page.goto('/employees');
     await page.waitForLoadState('networkidle');
 

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { getTokenForRole } from '../../fixtures/api.fixtures';
+import { APP_URLS } from '../../config/test-config';
 
 /**
  * API Error Handling Tests
@@ -12,7 +13,7 @@ import { getTokenForRole } from '../../fixtures/api.fixtures';
  */
 
 test.describe('API Error Handling', () => {
-  const baseURL = 'https://localhost:44378/api/v1';
+  const baseURL = APP_URLS.api;
   let authToken: string;
 
   test.beforeAll(async ({ request }) => {

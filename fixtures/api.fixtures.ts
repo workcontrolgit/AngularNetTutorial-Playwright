@@ -2,6 +2,7 @@ import { APIRequestContext, Page, Browser, chromium } from '@playwright/test';
 import type { EmployeeData, DepartmentData } from './data.fixtures';
 import { loginAsRole, getTokenFromProfile } from './auth.fixtures';
 import testUsers from '../config/test-users.json';
+import { APP_URLS } from '../config/test-config';
 
 /**
  * API Fixtures
@@ -13,7 +14,7 @@ import testUsers from '../config/test-users.json';
  * - Token acquisition for roles
  */
 
-const API_BASE_URL = 'https://localhost:44378/api/v1';
+const API_BASE_URL = APP_URLS.api;
 
 /**
  * Gets an access token for a specific role using browser-based authentication
